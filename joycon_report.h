@@ -8,6 +8,19 @@
 #include "subcommand.h"
 #include "battery_level.h"
 
+enum InputReportMode {
+    ACTIVE_NFC_IR_POLLING = 0x00, // Used with command 0x11; 0x31 data format must be set first
+    ACTIVE_NFC_IR_POLLING_CONFIG = 0x01,
+    ACTIVE_NFC_IR_POLLING_DATA_CONFIG = 0x02,
+    ACTIVE_IR_CAMERA_POLLING = 0x03,
+    MCU_UPDATE_STATE_REPORT_UNK = 0x23,
+    STANDARD = 0x30,
+    NFC_IR = 0x31,
+    UNKNOWN_1 = 0x33,
+    UNKNOWN_2 = 0x35,
+    BASIC = 0x3F
+};
+
 struct JoyConReport
 {
     enum InputReportType

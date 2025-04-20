@@ -2,39 +2,80 @@
 
 #include "extra_helpers.h"
 
-SwitchProController::SwitchProController() {
-    handle = hid_open(0x057E, 0x2009, NULL);
+SwitchController::SwitchController(hid_device *p_handle) {
+    handle = p_handle;
     if (!handle) {
         printf("ERROR: Handle is 0, so apparently we didn't connect\n");
     }
 }
 
-SwitchProController::~SwitchProController() {
-    hid_close(handle);
+SwitchController::~SwitchController() {
 }
 
-void SwitchProController::poll() {
+void SwitchController::poll() {
     hid_read(handle, buf, 361);
     report = JoyConReport(buf);
+
+    if (report.subcommand_reply_to != 0) {
+        printf("Report subcommand reply is %d\n", report.subcommand_reply_to);
+    }
 
     // Subcommand support
     switch (report.subcommand_reply_to)
     {
+    case REQUEST_DEVICE_INFO:
+        handle_request_device_info(report.subcommand_reply);
+        break;
     case SPI_FLASH_READ:
         handle_spi_flash_read(report.subcommand_reply);
         break;
     }
 }
 
-void SwitchProController::request_stick_calibration() {
-	SPIFlashReadSubcommand cmd;
-	cmd.address = SPI_ADDR_STICK_CALIB;
-	cmd.size = SPI_LEN_STICK_CALIB;
-    printf("handle is %d\n", handle);
-    hid_write(handle, cmd.to_buf(packet_num++), 0x40);
+void SwitchController::request_device_info() {
+    uint8_t buf[0x40];
+    bzero(buf, 0x40);
+    buf[0] = 1;
+    buf[1] = packet_num++;
+    buf[10] = REQUEST_DEVICE_INFO;
+    hid_write(handle, buf, 0x40);
 }
 
-void SwitchProController::handle_spi_flash_read(uint8_t *reply) {
+void SwitchController::set_input_report_mode(InputReportMode mode) {
+    uint8_t buf[0x40];
+    bzero(buf, 0x40);
+    buf[0] = 1;
+    buf[1] = packet_num++;
+    buf[10] = SET_INPUT_REPORT_MODE;
+    buf[11] = 0x31; // NFC/IR mode
+    hid_write(handle, buf, 0x40);
+}
+
+void SwitchController::request_stick_calibration() {
+	SPIFlashReadSubcommand cmd;
+	cmd.address = FACTORY_STICK_CALIBRATION;
+	cmd.size = 0x12;
+    write_to_hid(cmd);
+}
+
+void SwitchController::request_color_data() {
+    SPIFlashReadSubcommand cmd;
+    cmd.address = COLOR_DATA;
+    cmd.size = 0x605B - COLOR_DATA;
+    write_to_hid(cmd);
+}
+
+void SwitchController::write_to_hid(SPIFlashReadSubcommand cmd) {
+    uint8_t buf[0x40];
+    cmd.to_buf(buf, packet_num++);
+    hid_write(handle, buf, 0x40);
+}
+
+void SwitchController::handle_request_device_info(uint8_t *data) {
+    memcpy(&info, (SwitchDeviceInfo*)data, sizeof(SwitchDeviceInfo));
+}
+
+void SwitchController::handle_spi_flash_read(uint8_t *reply) {
 	uint32_t addr;
 	uint8_t size;
 
@@ -44,14 +85,43 @@ void SwitchProController::handle_spi_flash_read(uint8_t *reply) {
 	uint8_t data[size];
 	memcpy(data, reply + sizeof(uint32_t) + sizeof(uint8_t), size);
 
-	if (addr == SPI_ADDR_STICK_CALIB && size == SPI_LEN_STICK_CALIB) {
-		update_stick_calibration(data);
-	}
+    printf("SPI flash read! Address is 0x%X\n", addr);
+
+    switch (addr) {
+        case 0x5000: // Shipment data
+            break;
+        case SERIAL_NO:
+            break;
+        case FACTORY_IMU_CALIBRATION:
+            break;
+        case FACTORY_STICK_CALIBRATION:
+            break;
+        case COLOR_DATA:
+            update_color_data(data, size);
+            break;
+        case 0x6086: // Stick device parameters 1
+            break;
+        case 0x6098: // Stick device parameters 2
+            break;
+        case USER_IMU_CALIBRATION:
+            break;
+        case USER_STICK_CALIBRATION:
+            update_stick_calibration(data, size);
+            break;
+        default:
+            break;
+        
+    }
 }
 
-void SwitchProController::update_stick_calibration(uint8_t *stick_cal) {
+void SwitchController::update_stick_calibration(uint8_t *stick_cal, uint8_t size) {
 	// https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/spi_flash_notes.md#analog-stick-factory-and-user-calibration
 	printf("Stick calibration time!\n");
+
+    if (size != 0x12) {
+        printf("Size of data for stick calibration is %d but it should be %d\n", size, 0x12);
+        return;
+    }
 
     uint8_t *ls_stick_cal = stick_cal;
     uint16_t ls_data[6];
@@ -65,9 +135,6 @@ void SwitchProController::update_stick_calibration(uint8_t *stick_cal) {
     ls_calib.x_min = ls_data[2] - ls_data[4];
     ls_calib.x_center = ls_data[2];
     ls_calib.x_max = ls_data[2] + ls_data[0];
-
-    // printf("LS X center at %hu\n", ls_data[2]);
-    // printf("LS X center is at %hu, it can go as low as %hu and as high as %hu\n", ls_calib.x_center, ls_calib.x_min, ls_calib.x_max);
 
     ls_calib.y_min = ls_data[3] - ls_data[5];
     ls_calib.y_center = ls_data[3];
@@ -92,7 +159,7 @@ void SwitchProController::update_stick_calibration(uint8_t *stick_cal) {
     rs_calib.y_max = rs_data[1] + rs_data[5];
 }
 
-Vector2 SwitchProController::get_stick(Stick stick) const {
+Vector2 SwitchController::get_stick(Stick stick) const {
     double x_raw, x_min, x_max;
     double y_raw, y_min, y_max;
     switch (stick) {
@@ -114,10 +181,20 @@ Vector2 SwitchProController::get_stick(Stick stick) const {
             break;
     }
 
-    // printf("x_raw is %.2lf, range is [%.2lf, %.2lf]\n", x_raw, x_min, x_max);
-
     double x = (INV_LERP(x_min, x_max, x_raw) * 2.0) - 1.0;
     double y = (INV_LERP(y_min, y_max, y_raw) * 2.0) - 1.0;
 
     return Vector2(x, y);
+}
+
+void SwitchController::update_color_data(uint8_t *data, uint8_t size) {
+    if (size != 0x0B) {
+        printf("Color data size was 0x%X but should have been 0x0B\n", size);
+        return;
+    }
+
+    memcpy(&colors, (SwitchControllerColors*)data, sizeof(SwitchControllerColors));
+
+    printf("Body color: r=%d g=%d b=%d\n", colors.body_color.r, colors.body_color.g, colors.body_color.b);
+    printf("Button color: r=%d g=%d b=%d\n", colors.button_color.r, colors.button_color.g, colors.button_color.b);
 }

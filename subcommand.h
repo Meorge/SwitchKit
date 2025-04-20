@@ -50,10 +50,7 @@ struct SPIFlashReadSubcommand: Subcommand {
     uint32_t address;
     uint8_t size;
 
-    uint8_t *to_buf(uint8_t packet_num) const {
-        // TODO: make this return something better than an array because
-        // that's probably gonna cause problems
-        static uint8_t buf[0x40];
+   	void to_buf(uint8_t *buf, uint8_t packet_num) const {
         bzero(buf, 0x40);
         buf[0] = 1;
         buf[1] = packet_num;
@@ -61,7 +58,6 @@ struct SPIFlashReadSubcommand: Subcommand {
         buf[10] = type;
         memcpy(buf + 11, &address, sizeof(uint32_t));
         memcpy(buf + 11 + sizeof(uint32_t), &size, sizeof(uint8_t));
-        return buf;
     }
 };
 

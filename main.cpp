@@ -23,18 +23,25 @@ int main(void)
 	// Initialize the hidapi library
 	res = hid_init();
 
-	SwitchProController controller;
+    hid_device *pro_handle = hid_open(0x057E, 0x2009, NULL);
+	hid_device *r_handle = hid_open(0x57E, 0x2007, NULL);
+
+	SwitchController controller(r_handle);
+	controller.request_device_info();
 	controller.request_stick_calibration();
+	controller.request_color_data();
 
 	while (true)
 	{
 		controller.poll();
 
-		auto ls = controller.get_stick(SwitchProController::Stick::LEFT);
-		auto rs = controller.get_stick(SwitchProController::Stick::RIGHT);
+		auto ls = controller.get_stick(SwitchController::Stick::LEFT);
+		auto rs = controller.get_stick(SwitchController::Stick::RIGHT);
 
-		printf("LS: %.2f, %.2f\t\tRS: %.2f, %.2f\n", ls.x, ls.y, rs.x, rs.y);
+		// printf("LS: %.2f, %.2f\t\tRS: %.2f, %.2f\n", ls.x, ls.y, rs.x, rs.y);
 	}
+
+	hid_close(handle);
 
 	res = hid_exit();
 }
