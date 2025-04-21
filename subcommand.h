@@ -44,6 +44,21 @@ struct Subcommand {
     static SubcommandType const type;
 };
 
+struct SetInputModeSubcommand: Subcommand {
+	static SubcommandType const type = SET_INPUT_REPORT_MODE;
+
+	uint8_t mode;
+
+	void to_buf(uint8_t *buf, uint8_t packet_num) const {
+		bzero(buf, 0x40);
+		buf[0] = 1;
+		buf[1] = packet_num;
+
+		buf[10] = type;
+		buf[11] = mode;
+	}
+};
+
 struct SPIFlashReadSubcommand: Subcommand {
     static SubcommandType const type = SPI_FLASH_READ;
 

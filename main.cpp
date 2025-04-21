@@ -27,6 +27,7 @@ int main(void)
 	hid_device *r_handle = hid_open(0x57E, 0x2007, NULL);
 
 	SwitchController controller(r_handle);
+	controller.set_input_report_mode(InputReportMode::STANDARD);
 	controller.request_device_info();
 	controller.request_stick_calibration();
 	controller.request_color_data();

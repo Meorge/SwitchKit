@@ -43,12 +43,10 @@ void SwitchController::request_device_info() {
 
 void SwitchController::set_input_report_mode(InputReportMode mode) {
     uint8_t buf[0x40];
-    bzero(buf, 0x40);
-    buf[0] = 1;
-    buf[1] = packet_num++;
-    buf[10] = SET_INPUT_REPORT_MODE;
-    buf[11] = 0x31; // NFC/IR mode
-    hid_write(handle, buf, 0x40);
+    SetInputModeSubcommand cmd;
+    cmd.mode = mode;
+    cmd.to_buf(buf, packet_num++);
+    hid_write(handle, buf, 0x40); // TODO: Make write_to_hid work for different commands
 }
 
 void SwitchController::request_stick_calibration() {
