@@ -49,6 +49,17 @@ void SwitchController::set_input_report_mode(InputReportMode mode) {
     hid_write(handle, buf, 0x40); // TODO: Make write_to_hid work for different commands
 }
 
+void SwitchController::set_imu_enabled(bool enabled) {
+    uint8_t buf[0x40];
+    bzero(buf, 0x40);
+    buf[0] = 1;
+    buf[1] = packet_num++;
+
+    buf[10] = 0x40; // Enable IMU command
+    buf[11] = enabled ? 0x01 : 0x00;
+    hid_write(handle, buf, 0x40);
+}
+
 void SwitchController::request_stick_calibration() {
 	SPIFlashReadSubcommand cmd;
 	cmd.address = FACTORY_STICK_CALIBRATION;

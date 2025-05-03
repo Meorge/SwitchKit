@@ -10,7 +10,7 @@
 #include "joycon_report.h"
 #include "stick_calibration_data.h"
 #include "subcommand.h"
-#include "vector2.h"
+#include "vectors.h"
 
 enum SPIFlashReadAddress {
     SERIAL_NO = 0x6000,
@@ -61,6 +61,7 @@ public:
         RIGHT
     };
     void set_input_report_mode(InputReportMode mode);
+    void set_imu_enabled(bool enabled);
     void request_device_info();
     void request_stick_calibration();
     void request_color_data();

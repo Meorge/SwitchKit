@@ -28,6 +28,7 @@ int main(void)
 
 	SwitchController controller(r_handle);
 	controller.set_input_report_mode(InputReportMode::STANDARD);
+	controller.set_imu_enabled(true);
 	controller.request_device_info();
 	controller.request_stick_calibration();
 	controller.request_color_data();

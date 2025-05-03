@@ -7,6 +7,7 @@
 
 #include "subcommand.h"
 #include "battery_level.h"
+#include "imu.h"
 
 enum InputReportMode {
     ACTIVE_NFC_IR_POLLING = 0x00, // Used with command 0x11; 0x31 data format must be set first
@@ -75,8 +76,30 @@ struct JoyConReport
     uint16_t rs_x = 0;
     uint16_t rs_y = 0;
 
-    uint8_t subcommand_reply_to = 0;
-    uint8_t subcommand_reply[35];
+    struct SubcommandReply {
+        uint8_t reply_to = 0;
+        uint8_t data[35];
+    };
+
+    struct MCUReport {
+        uint8_t data[37];
+    };
+
+    // struct IMUReport {
+    //     // "3 frames of 2 groups of 3 int16 LE each, acc followed by gyro"
+    //     uint8_t data[36];
+    // };
+
+    struct NFCIRReport {
+        uint8_t data[313];
+    };
+
+    // TODO: put this in a union for efficiency
+    SubcommandReply subcommand_reply; // x21
+    MCUReport mcu_report; // x23
+    IMUPacket imu_packets[3]; // x30, x31, x32, x33
+    NFCIRReport nfc_ir_report; // x31
+    
 
     JoyConReport() {}
 
@@ -132,11 +155,14 @@ struct JoyConReport
             // If data type is 0x00, it's a simple ACK.
             auto data_type = buf[13] & 0x7F;
 
-            subcommand_reply_to = buf[14];
-            memcpy(subcommand_reply, buf + 15, 35);
+            subcommand_reply.reply_to = buf[14];
+            memcpy(subcommand_reply.data, buf + 15, 35);
         }
 
-        // printf("In report, ls_x is %d\n", ls_x);
+        else if (report_type == STANDARD) {
+            // Decode 6-axis data
+            memcpy(imu_packets, buf + 13, sizeof(IMUPacket) * 3);
+        }
     }
 };
 
