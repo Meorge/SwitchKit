@@ -62,6 +62,7 @@ public:
     };
     void set_input_report_mode(InputReportMode mode);
     void set_imu_enabled(bool enabled);
+    void enable_ringcon();
     void request_device_info();
     void request_stick_calibration();
     void request_color_data();

@@ -33,14 +33,14 @@ int main(void)
 	controller.request_stick_calibration();
 	controller.request_color_data();
 
+	controller.enable_ringcon();
+
 	while (true)
 	{
 		controller.poll();
 
 		auto ls = controller.get_stick(SwitchController::Stick::LEFT);
 		auto rs = controller.get_stick(SwitchController::Stick::RIGHT);
-
-		// printf("LS: %.2f, %.2f\t\tRS: %.2f, %.2f\n", ls.x, ls.y, rs.x, rs.y);
 	}
 
 	hid_close(handle);

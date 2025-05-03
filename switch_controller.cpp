@@ -16,19 +16,16 @@ void SwitchController::poll() {
     hid_read(handle, buf, 361);
     report = JoyConReport(buf);
 
-    if (report.subcommand_reply_to != 0) {
-        printf("Report subcommand reply is %d\n", report.subcommand_reply_to);
-    }
-
-    // Subcommand support
-    switch (report.subcommand_reply_to)
-    {
-    case REQUEST_DEVICE_INFO:
-        handle_request_device_info(report.subcommand_reply);
-        break;
-    case SPI_FLASH_READ:
-        handle_spi_flash_read(report.subcommand_reply);
-        break;
+    switch (report.report_type) {
+        case JoyConReport::InputReportType::SUBCOMMAND_REPLY:
+        {
+            if (report.subcommand_reply.reply_to != 0) {
+                printf("Report subcommand reply is 0x%02X\n", report.subcommand_reply.reply_to);
+            }
+        }
+        case JoyConReport::InputReportType::STANDARD:
+        {
+        }
     }
 }
 
@@ -39,6 +36,17 @@ void SwitchController::request_device_info() {
     buf[1] = packet_num++;
     buf[10] = REQUEST_DEVICE_INFO;
     hid_write(handle, buf, 0x40);
+
+    while (true) {
+        uint8_t in_buf[361];
+        hid_read(handle, in_buf, 361);
+        report = JoyConReport(in_buf);
+        if (report.report_type == JoyConReport::InputReportType::SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == REQUEST_DEVICE_INFO) {
+            printf("Device info received!\n");
+            handle_request_device_info(report.subcommand_reply.data);
+            break;
+        }
+    }
 }
 
 void SwitchController::set_input_report_mode(InputReportMode mode) {
@@ -47,6 +55,15 @@ void SwitchController::set_input_report_mode(InputReportMode mode) {
     cmd.mode = mode;
     cmd.to_buf(buf, packet_num++);
     hid_write(handle, buf, 0x40); // TODO: Make write_to_hid work for different commands
+    while (true) {
+        uint8_t in_buf[361];
+        hid_read(handle, in_buf, 361);
+        report = JoyConReport(in_buf);
+        if (report.report_type == JoyConReport::InputReportType::SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == SET_INPUT_REPORT_MODE) {
+            printf("Set input report mode received!\n");
+            break;
+        }
+    }
 }
 
 void SwitchController::set_imu_enabled(bool enabled) {
@@ -55,16 +72,198 @@ void SwitchController::set_imu_enabled(bool enabled) {
     buf[0] = 1;
     buf[1] = packet_num++;
 
-    buf[10] = 0x40; // Enable IMU command
+    buf[10] = ENABLE_IMU;
     buf[11] = enabled ? 0x01 : 0x00;
     hid_write(handle, buf, 0x40);
+
+    while (true) {
+        uint8_t in_buf[361];
+        hid_read(handle, in_buf, 361);
+        report = JoyConReport(in_buf);
+        if (report.report_type == JoyConReport::InputReportType::SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == ENABLE_IMU) {
+            printf("Enable IMU received!\n");
+            break;
+        }
+    }
 }
+
+void SwitchController::enable_ringcon() {
+    uint8_t buf[0x40];
+    bzero(buf, 0x40);
+    buf[0] = 1;
+    
+    // Step 1 - Set MCU state to standby, wait for its response
+    printf("Setting MCU state to standby...\n");
+    bzero(buf, 0x40);
+    buf[0] = 1;
+    buf[1] = packet_num++;
+    buf[10] = SET_NFC_IR_MCU_STATE;
+    buf[11] = 0x01; // Resume/standby mode
+    hid_write(handle, buf, 0x40);
+
+    while (true) {
+        uint8_t in_buf[361];
+        hid_read(handle, in_buf, 361);
+        report = JoyConReport(in_buf);
+        if (report.report_type == JoyConReport::InputReportType::SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == SET_NFC_IR_MCU_STATE) {
+            printf("Set MCU state received!\n");
+            break;
+        }
+    }
+
+
+    // Step 2 - Set MCU mode to MaybeRingcon, wait to get its response and see that state report state to be MaybeRingcon
+    while (true) {
+        bzero(buf, 0x40);
+        buf[0] = 1;
+        buf[1] = packet_num++;
+        buf[10] = SET_NFC_IR_MCU_CONFIG; // Set NFC/IR MCU configuration
+        buf[11] = 0x00; // Set MCU mode
+        buf[12] = 0x03; // MaybeRingcon
+        hid_write(handle, buf, 0x40);
+
+        // TODO: I think the next thing to try is that damn CRC table thing.
+        // It seems like I'm close, but I'm just not getting it quite right yet,
+        // and the CRC table seems to be the last big discrepancy.
+
+        bool should_break = false;
+        while (true) {
+            uint8_t in_buf[361];
+            hid_read(handle, in_buf, 361);
+            report = JoyConReport(in_buf);
+            if (report.report_type == JoyConReport::InputReportType::SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == SET_NFC_IR_MCU_CONFIG) {
+                printf("Set MCU config to MaybeRingcon received!\n");
+
+                // See if it's a state report - waiting for 0x01
+                printf("MCU report ID is 0x%02X\n", report.subcommand_reply.data[0]);
+                if (report.subcommand_reply.data[0] == 0x01) {
+                    printf("Got the state report\n");
+
+                    // TODO: check if it's mayberingcon
+                    should_break = true;
+                    break;
+                }
+            }
+        }
+
+        if (should_break) break;
+    }
+
+    // NOTE: not doing that CRC stuff yet, that's scary
+
+    // Step 3 - Configure MCU IR data, wait for its response
+    bzero(buf, 0x40);
+    buf[0] = 1;
+    buf[1] = packet_num++;
+    buf[10] = SET_NFC_IR_MCU_CONFIG; // Set NFC/IR MCU configuration
+    buf[11] = 0x01; // Set IR mode
+    buf[12] = 0x01; // Mode is sensor sleep
+    buf[13] = 0; // 0 packets to output per buffer
+    // MCU FW version is 0 - we already zeroed out the buffer so this should be done??
+
+    hid_write(handle, buf, 0x40);
+    while (true) {
+        uint8_t in_buf[361];
+        hid_read(handle, in_buf, 361);
+        report = JoyConReport(in_buf);
+        if (report.report_type == JoyConReport::InputReportType::SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == SET_NFC_IR_MCU_CONFIG) {
+            printf("Configure MCU IR command received!\n");
+            break;
+        }
+    }
+
+    // Step 4 - Call subcommand 0x59, wait for its response
+    bzero(buf, 0x40);
+    buf[0] = 1;
+    buf[1] = packet_num++;
+    buf[10] = 0x59; // Command but we don't know what it is... but it works maybe!?
+    hid_write(handle, buf, 0x40);
+    while (true) {
+        uint8_t in_buf[361];
+        hid_read(handle, in_buf, 361);
+        report = JoyConReport(in_buf);
+        if (report.report_type == JoyConReport::InputReportType::SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == 0x59) {
+            printf("Mysterious 0x59 command received!\n");
+            break;
+        }
+    }
+
+    // Step 5 - Set IMU mode to MaybeRingcon, wait for its response
+    bzero(buf, 0x40);
+    buf[0] = 1;
+    buf[1] = packet_num++;
+    buf[10] = ENABLE_IMU; // Enable IMU command
+    buf[11] = 0x03; // Maybe Ring-Con
+    hid_write(handle, buf, 0x40);
+    while (true) {
+        uint8_t in_buf[361];
+        hid_read(handle, in_buf, 361);
+        report = JoyConReport(in_buf);
+        if (report.report_type == JoyConReport::InputReportType::SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == ENABLE_IMU) {
+            printf("Enable IMU command received!\n");
+            break;
+        }
+    }
+
+    // Step 6 - Call subcommand 0x5c_6, wait for its response
+    bzero(buf, 0x40);
+    buf[0] = 1;
+    buf[1] = packet_num++;
+    buf[10] = 0x5C;
+
+    uint8_t stuffs[] = { 6, 3, 37, 6, 0, 0, 0, 0, 236, 153, 172, 227, 28, 0, 0, 0, 105, 155, 22, 246, 93, 86, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 144, 40, 161, 227, 28, 0 };
+    memcpy(buf + 11, stuffs, sizeof(stuffs));
+
+    hid_write(handle, buf, 0x40);
+    while (true) {
+        uint8_t in_buf[361];
+        hid_read(handle, in_buf, 361);
+        report = JoyConReport(in_buf);
+        if (report.report_type == JoyConReport::InputReportType::SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == 0x5C) {
+            printf("Mysterious 0x5C command received!\n");
+            break;
+        }
+    }
+
+    // Step 7 - Call subcommand 0x5a, wait for its response
+    bzero(buf, 0x40);
+    buf[0] = 1;
+    buf[1] = packet_num++;
+    buf[10] = 0x5A;
+
+    uint8_t stuffs2[] = { 4, 1, 1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, };
+    memcpy(buf + 11, stuffs2, sizeof(stuffs2));
+
+    hid_write(handle, buf, 0x40);
+    while (true) {
+        uint8_t in_buf[361];
+        hid_read(handle, in_buf, 361);
+        report = JoyConReport(in_buf);
+        if (report.report_type == JoyConReport::InputReportType::SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == 0x5A) {
+            printf("Mysterious 0x5A command received!\n");
+            break;
+        }
+    }
+}
+
 
 void SwitchController::request_stick_calibration() {
 	SPIFlashReadSubcommand cmd;
 	cmd.address = FACTORY_STICK_CALIBRATION;
 	cmd.size = 0x12;
     write_to_hid(cmd);
+
+    while (true) {
+        uint8_t in_buf[361];
+        hid_read(handle, in_buf, 361);
+        report = JoyConReport(in_buf);
+        if (report.report_type == JoyConReport::InputReportType::SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == SPI_FLASH_READ) {
+            printf("Stick calibration data(?) received!\n");
+            handle_spi_flash_read(report.subcommand_reply.data);
+            break;
+        }
+    }
 }
 
 void SwitchController::request_color_data() {
@@ -72,6 +271,17 @@ void SwitchController::request_color_data() {
     cmd.address = COLOR_DATA;
     cmd.size = 0x605B - COLOR_DATA;
     write_to_hid(cmd);
+
+    while (true) {
+        uint8_t in_buf[361];
+        hid_read(handle, in_buf, 361);
+        report = JoyConReport(in_buf);
+        if (report.report_type == JoyConReport::InputReportType::SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == SPI_FLASH_READ) {
+            printf("Color data(?) received!\n");
+            handle_spi_flash_read(report.subcommand_reply.data);
+            break;
+        }
+    }
 }
 
 void SwitchController::write_to_hid(SPIFlashReadSubcommand cmd) {
@@ -93,8 +303,6 @@ void SwitchController::handle_spi_flash_read(uint8_t *reply) {
 
 	uint8_t data[size];
 	memcpy(data, reply + sizeof(uint32_t) + sizeof(uint8_t), size);
-
-    printf("SPI flash read! Address is 0x%X\n", addr);
 
     switch (addr) {
         case 0x5000: // Shipment data
