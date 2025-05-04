@@ -1,4 +1,5 @@
 #ifndef IMU_H
+#define IMU_H
 
 #define G_RANGE 16000
 #define G_GAIN 4588 // 4000 + 15% to avoid saturation, according to documentation

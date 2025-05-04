@@ -62,7 +62,16 @@ public:
     };
     void set_input_report_mode(InputReportMode mode);
     void set_imu_enabled(bool enabled);
+    void set_mcu_enabled(bool enabled);
+    void configure_mcu(uint8_t command, uint8_t subcommand, uint8_t mode);
+    uint16_t get_external_device_id();
+    void set_external_format_config(uint8_t *data);
+    void enable_external_polling(uint8_t *data);
+
     void enable_ringcon();
+
+    double get_ringcon_flex();
+
     void request_device_info();
     void request_stick_calibration();
     void request_color_data();

@@ -87,18 +87,13 @@ void SwitchController::set_imu_enabled(bool enabled) {
     }
 }
 
-void SwitchController::enable_ringcon() {
-    uint8_t buf[0x40];
-    bzero(buf, 0x40);
-    buf[0] = 1;
-    
-    // Step 1 - Set MCU state to standby, wait for its response
-    printf("Setting MCU state to standby...\n");
+void SwitchController::set_mcu_enabled(bool enabled) {
+    printf("Enabling MCU...\n");
     bzero(buf, 0x40);
     buf[0] = 1;
     buf[1] = packet_num++;
     buf[10] = SET_NFC_IR_MCU_STATE;
-    buf[11] = 0x01; // Resume/standby mode
+    buf[11] = enabled ? 0x01 : 0x00; // Resume/standby mode
     hid_write(handle, buf, 0x40);
 
     while (true) {
@@ -110,143 +105,136 @@ void SwitchController::enable_ringcon() {
             break;
         }
     }
+}
 
-
-    // Step 2 - Set MCU mode to MaybeRingcon, wait to get its response and see that state report state to be MaybeRingcon
-    while (true) {
-        bzero(buf, 0x40);
-        buf[0] = 1;
-        buf[1] = packet_num++;
-        buf[10] = SET_NFC_IR_MCU_CONFIG; // Set NFC/IR MCU configuration
-        buf[11] = 0x00; // Set MCU mode
-        buf[12] = 0x03; // MaybeRingcon
-        hid_write(handle, buf, 0x40);
-
-        // TODO: I think the next thing to try is that damn CRC table thing.
-        // It seems like I'm close, but I'm just not getting it quite right yet,
-        // and the CRC table seems to be the last big discrepancy.
-
-        bool should_break = false;
-        while (true) {
-            uint8_t in_buf[361];
-            hid_read(handle, in_buf, 361);
-            report = JoyConReport(in_buf);
-            if (report.report_type == JoyConReport::InputReportType::SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == SET_NFC_IR_MCU_CONFIG) {
-                printf("Set MCU config to MaybeRingcon received!\n");
-
-                // See if it's a state report - waiting for 0x01
-                printf("MCU report ID is 0x%02X\n", report.subcommand_reply.data[0]);
-                if (report.subcommand_reply.data[0] == 0x01) {
-                    printf("Got the state report\n");
-
-                    // TODO: check if it's mayberingcon
-                    should_break = true;
-                    break;
-                }
-            }
-        }
-
-        if (should_break) break;
+uint8_t calc_crc8(uint8_t *data, uint8_t size) {
+    uint8_t crc = 0;
+    for (int i = 0; i < size; i++) {
+        crc = MCU_CRC8_TABLE[(uint8_t)(crc ^ data[i])];
     }
+    return crc;
+}
 
-    // NOTE: not doing that CRC stuff yet, that's scary
-
-    // Step 3 - Configure MCU IR data, wait for its response
+void SwitchController::configure_mcu(uint8_t command, uint8_t subcommand, uint8_t mode) {
+    uint8_t buf[0x40];
     bzero(buf, 0x40);
     buf[0] = 1;
     buf[1] = packet_num++;
-    buf[10] = SET_NFC_IR_MCU_CONFIG; // Set NFC/IR MCU configuration
-    buf[11] = 0x01; // Set IR mode
-    buf[12] = 0x01; // Mode is sensor sleep
-    buf[13] = 0; // 0 packets to output per buffer
-    // MCU FW version is 0 - we already zeroed out the buffer so this should be done??
+    buf[10] = SET_NFC_IR_MCU_CONFIG;
 
+    uint8_t subcommand_data[38];
+    bzero(subcommand_data, 38);
+    subcommand_data[0] = command;
+    subcommand_data[1] = subcommand;
+    subcommand_data[2] = mode;
+    subcommand_data[37] = calc_crc8(subcommand_data + 1, 36);
+    memcpy(buf + 11, subcommand_data, sizeof(subcommand_data));
     hid_write(handle, buf, 0x40);
+
+    printf("Attempting to configure MCU...\n");
     while (true) {
         uint8_t in_buf[361];
         hid_read(handle, in_buf, 361);
         report = JoyConReport(in_buf);
         if (report.report_type == JoyConReport::InputReportType::SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == SET_NFC_IR_MCU_CONFIG) {
-            printf("Configure MCU IR command received!\n");
-            break;
-        }
-    }
-
-    // Step 4 - Call subcommand 0x59, wait for its response
-    bzero(buf, 0x40);
-    buf[0] = 1;
-    buf[1] = packet_num++;
-    buf[10] = 0x59; // Command but we don't know what it is... but it works maybe!?
-    hid_write(handle, buf, 0x40);
-    while (true) {
-        uint8_t in_buf[361];
-        hid_read(handle, in_buf, 361);
-        report = JoyConReport(in_buf);
-        if (report.report_type == JoyConReport::InputReportType::SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == 0x59) {
-            printf("Mysterious 0x59 command received!\n");
-            break;
-        }
-    }
-
-    // Step 5 - Set IMU mode to MaybeRingcon, wait for its response
-    bzero(buf, 0x40);
-    buf[0] = 1;
-    buf[1] = packet_num++;
-    buf[10] = ENABLE_IMU; // Enable IMU command
-    buf[11] = 0x03; // Maybe Ring-Con
-    hid_write(handle, buf, 0x40);
-    while (true) {
-        uint8_t in_buf[361];
-        hid_read(handle, in_buf, 361);
-        report = JoyConReport(in_buf);
-        if (report.report_type == JoyConReport::InputReportType::SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == ENABLE_IMU) {
-            printf("Enable IMU command received!\n");
-            break;
-        }
-    }
-
-    // Step 6 - Call subcommand 0x5c_6, wait for its response
-    bzero(buf, 0x40);
-    buf[0] = 1;
-    buf[1] = packet_num++;
-    buf[10] = 0x5C;
-
-    uint8_t stuffs[] = { 6, 3, 37, 6, 0, 0, 0, 0, 236, 153, 172, 227, 28, 0, 0, 0, 105, 155, 22, 246, 93, 86, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 144, 40, 161, 227, 28, 0 };
-    memcpy(buf + 11, stuffs, sizeof(stuffs));
-
-    hid_write(handle, buf, 0x40);
-    while (true) {
-        uint8_t in_buf[361];
-        hid_read(handle, in_buf, 361);
-        report = JoyConReport(in_buf);
-        if (report.report_type == JoyConReport::InputReportType::SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == 0x5C) {
-            printf("Mysterious 0x5C command received!\n");
-            break;
-        }
-    }
-
-    // Step 7 - Call subcommand 0x5a, wait for its response
-    bzero(buf, 0x40);
-    buf[0] = 1;
-    buf[1] = packet_num++;
-    buf[10] = 0x5A;
-
-    uint8_t stuffs2[] = { 4, 1, 1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, };
-    memcpy(buf + 11, stuffs2, sizeof(stuffs2));
-
-    hid_write(handle, buf, 0x40);
-    while (true) {
-        uint8_t in_buf[361];
-        hid_read(handle, in_buf, 361);
-        report = JoyConReport(in_buf);
-        if (report.report_type == JoyConReport::InputReportType::SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == 0x5A) {
-            printf("Mysterious 0x5A command received!\n");
+            printf("Configure MCU response received!\n");
+            for (int i = 0; i < 35; i++) {
+                printf("%02X ", report.subcommand_reply.data[i]);
+            }
+            printf("\n");
             break;
         }
     }
 }
 
+uint16_t SwitchController::get_external_device_id() {
+    printf("Checking if Ring-Con is connected...\n");
+    bzero(buf, 0x40);
+    buf[0] = 1;
+    buf[1] = packet_num++;
+    buf[10] = 0x59; // GET_EXTERNAL_DEVICE_INFO
+    hid_write(handle, buf, 0x40);
+
+    while (true) {
+        uint8_t in_buf[361];
+        hid_read(handle, in_buf, 361);
+        report = JoyConReport(in_buf);
+        if (report.report_type == JoyConReport::InputReportType::SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == 0x59) {
+            printf("Response on external device info received!\n");
+            return *((uint16_t*)report.subcommand_reply.data);
+        }
+    }
+}
+
+void SwitchController::set_external_format_config(uint8_t *data) {
+    uint8_t buf[0x40];
+    bzero(buf, 0x40);
+    buf[0] = 1;
+    buf[1] = packet_num++;
+    buf[10] = 0x5C; // SET_EXTERNAL_FORMAT_CONFIG
+    memcpy(buf + 11, data, sizeof(data));
+    hid_write(handle, buf, 0x40);
+
+    while (true) {
+        uint8_t in_buf[361];
+        hid_read(handle, in_buf, 361);
+        report = JoyConReport(in_buf);
+        if (report.report_type == JoyConReport::InputReportType::SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == 0x5C) {
+            break;
+        }
+    }
+}
+
+void SwitchController::enable_external_polling(uint8_t *data) {
+    uint8_t buf[0x40];
+    bzero(buf, 0x40);
+    buf[0] = 1;
+    buf[1] = packet_num++;
+    buf[10] = 0x5A; // ENABLE_EXTERNAL_POLLING
+    memcpy(buf + 11, data, sizeof(data));
+    hid_write(handle, buf, 0x40);
+
+    while (true) {
+        uint8_t in_buf[361];
+        hid_read(handle, in_buf, 361);
+        report = JoyConReport(in_buf);
+        if (report.report_type == JoyConReport::InputReportType::SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == 0x5A) {
+            break;
+        }
+    }
+}
+
+void SwitchController::enable_ringcon() {
+    // Enable IMU
+    set_imu_enabled(true);
+
+    // Enable MCU
+    set_mcu_enabled(true);
+
+    // Configure MCU
+    configure_mcu(33, 1, 1); // CONGIFURE_MCU, SET_DEVICE_MODE, STANDBY
+
+    // Check if ring is connected
+    uint16_t external_id = get_external_device_id();
+    printf("External device connected: 0x%04X\n", external_id);
+
+    // Send SET_EXTERNAL_FORMAT_CONFIG with data
+    uint8_t ext_format_config[] = { 0x06, 0x03, 0x25, 0x06, 0x00, 0x00, 0x00, 0x00, 0x1C, 0x16, 0xED, 0x34, 0x36,
+        0x00, 0x00, 0x00, 0x0A, 0x64, 0x0B, 0xE6, 0xA9, 0x22, 0x00, 0x00, 0x04, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x90, 0xA8, 0xE1, 0x34, 0x36 };
+    set_external_format_config(ext_format_config);
+
+    // Set ENABLE_EXTERNAL_POLLING with data
+    uint8_t enable_external_polling_data[] = { 0x04, 0x01, 0x01, 0x02 };
+    enable_external_polling(enable_external_polling_data);
+}
+
+double SwitchController::get_ringcon_flex() {
+    double low_bound = 2280.0 - 2500.0;
+    double high_bound = 2280.0 + 2500.0;
+    double current = (double)report.imu_packets[2].accel_y;
+    return INV_LERP(low_bound, high_bound, current);
+}
 
 void SwitchController::request_stick_calibration() {
 	SPIFlashReadSubcommand cmd;

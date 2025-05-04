@@ -41,6 +41,8 @@ int main(void)
 
 		auto ls = controller.get_stick(SwitchController::Stick::LEFT);
 		auto rs = controller.get_stick(SwitchController::Stick::RIGHT);
+
+		printf("Flex: %.2lf\n", controller.get_ringcon_flex());
 	}
 
 	hid_close(handle);
