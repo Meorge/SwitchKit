@@ -153,6 +153,7 @@ struct JoyConReport
         if (report_type == SUBCOMMAND_REPLY && buf[13] >> 7) {
             // Subcommand was acknowledged.
             // If data type is 0x00, it's a simple ACK.
+            bool ack = buf[13] >> 7;
             auto data_type = buf[13] & 0x7F;
 
             subcommand_reply.reply_to = buf[14];
@@ -162,6 +163,42 @@ struct JoyConReport
         else if (report_type == STANDARD) {
             // Decode 6-axis data
             memcpy(imu_packets, buf + 13, sizeof(IMUPacket) * 3);
+
+            // for (int i = 0; i < 3; i++) {
+            //     Vector3 ac = get_accel(imu_packets[i]);
+            //     Vector3 gy = get_rotation_deg(imu_packets[i]);
+            //     printf("Packet %d\n", i);
+            //     printf("Accel: (%.2lf, %.2lf, %.2lf)\n", ac.x, ac.y, ac.z);
+            //     printf("Gyro: (%.2lf, %.2lf, %.2lf)\n", gy.x, gy.y, gy.z);
+            //     printf("----\n");
+            // }
+            // printf("----\n");
+
+            // for (int i = 0; i < 3; i++) {
+            //     printf("Packet %d\n", i);
+            //     printf("Accel: (%d, %d, %d)\n", imu_packets[i].accel_x, imu_packets[i].accel_y, imu_packets[i].accel_z);
+            //     printf("Gyro: (%d, %d, %d)\n", imu_packets[i].gyro_1, imu_packets[i].gyro_2, imu_packets[i].gyro_3);
+            //     printf("----\n");
+            // }
+            // printf("----\n");
+
+            // for (int i = 0; i < sizeof(IMUPacket) * 3; i++) {
+            //     if (i % sizeof(IMUPacket) == 0) {
+            //         printf("| ");
+            //     }
+            //     printf("%02X ", *(buf + 13 + i));
+            // }
+            // printf("\n");
+
+
+            IMUPacket packet3 = imu_packets[2];
+            // Get this in u8's
+            uint8_t *uint8s = (uint8_t*)&packet3;
+            uint8_t datas[2] { uint8s[3], uint8s[2]};
+            uint16_t *together = (uint16_t*)datas;
+            // printf("Maybe Ring-Con data?? %d\n", *together);
+            // printf("%x %x\n", uint8s[2], uint8s[3]);
+            
         }
     }
 };
