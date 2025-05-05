@@ -107,6 +107,19 @@ void SwitchController::set_mcu_enabled(bool enabled) {
     }
 }
 
+void SwitchController::rumble(const HDRumbleConfig &p_config) {
+    uint8_t buf[0x40];
+    bzero(buf, 0x40);
+    buf[0] = 0x10; // Rumble only
+    buf[1] = packet_num++;
+
+    HDRumbleDataInternal left = HDRumbleDataInternal::from_side_config(p_config.left);
+    HDRumbleDataInternal right = HDRumbleDataInternal::from_side_config(p_config.right);
+    memcpy(buf + 2, &left, sizeof(HDRumbleDataInternal));
+    memcpy(buf + 2 + 4, &right, sizeof(HDRumbleDataInternal));
+    hid_write(handle, buf, 0x40);
+}
+
 uint8_t calc_crc8(uint8_t *data, uint8_t size) {
     uint8_t crc = 0;
     for (int i = 0; i < size; i++) {

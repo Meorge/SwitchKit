@@ -11,6 +11,7 @@
 #include "stick_calibration_data.h"
 #include "subcommand.h"
 #include "vectors.h"
+#include "rumble.h"
 
 enum SPIFlashReadAddress {
     SERIAL_NO = 0x6000,
@@ -76,6 +77,8 @@ public:
     void request_stick_calibration();
     void request_color_data();
     void poll();
+
+    void rumble(const HDRumbleConfig &p_config);
 
     void write_to_hid(SPIFlashReadSubcommand cmd);
 
