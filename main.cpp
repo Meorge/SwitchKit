@@ -35,6 +35,15 @@ int main(void)
 
 	controller.enable_ringcon();
 
+	HDRumbleConfig rumble;
+	rumble.right.low.amplitude = 0.9;
+	rumble.right.low.frequency = 140.0;
+
+	rumble.right.high.amplitude = 0.3;
+	rumble.right.high.frequency = 110.0;
+
+	HDRumbleConfig no_rumble;
+
 	while (true)
 	{
 		controller.poll();
@@ -43,6 +52,13 @@ int main(void)
 		auto rs = controller.get_stick(SwitchController::Stick::RIGHT);
 
 		printf("Flex: %.2lf\n", controller.get_ringcon_flex());
+
+		if (controller.get_ringcon_flex() > 0.65) {
+			controller.rumble(rumble);
+		} else {
+			controller.rumble(no_rumble);
+		}
+		
 	}
 
 	hid_close(handle);
