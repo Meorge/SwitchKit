@@ -22,4 +22,5 @@ struct IMUPacket {
 Vector3 get_accel(const IMUPacket &p_packet);
 Vector3 get_rotation_deg(const IMUPacket &p_packet);
 Vector3 get_rotation_rev(const IMUPacket &p_packet);
-#endif
+
+#endif // IMU_H
