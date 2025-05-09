@@ -3,6 +3,7 @@
 
 #include <cstdint>
 
+namespace SwitchKit {
 struct Color24 {
     uint8_t r;
     uint8_t g;
@@ -15,5 +16,6 @@ struct SwitchControllerColors {
     Color24 left_grip_color;
     Color24 right_grip_color;
 };
+}
 
 #endif // COLORS_H

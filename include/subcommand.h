@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cstring>
 
+namespace SwitchKit {
 // From mod.rs in joy, which in turn appears to be from jc_toolkit
 const uint8_t MCU_CRC8_TABLE[] = {
     0x00, 0x07, 0x0E, 0x09, 0x1C, 0x1B, 0x12, 0x15, 0x38, 0x3F, 0x36, 0x31, 0x24, 0x23, 0x2A, 0x2D,
@@ -95,5 +96,6 @@ struct SPIFlashReadSubcommand: Subcommand {
         memcpy(buf + 11 + sizeof(uint32_t), &size, sizeof(uint8_t));
     }
 };
+}
 
 #endif // SUBCOMMAND_H

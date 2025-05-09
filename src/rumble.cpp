@@ -3,6 +3,7 @@
 
 #include "rumble.h"
 
+namespace SwitchKit {
 HDRumbleDataInternal HDRumbleDataInternal::from_side_config(const HDRumbleSideConfig &p_config) {
     double high_band_freq_float = p_config.high.frequency;
     double high_band_amp_float = p_config.high.amplitude; // TODO: clamp 0-1
@@ -57,4 +58,5 @@ uint16_t HDRumbleDataInternal::amplitude_to_hf_amp(double p_amp) {
 
 uint8_t HDRumbleDataInternal::amplitude_to_lf_amp(double p_amp) {
     return (uint8_t)(amplitude_to_hex(p_amp) / 2 + 64);
+}
 }

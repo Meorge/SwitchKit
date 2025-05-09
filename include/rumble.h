@@ -1,6 +1,7 @@
 #ifndef RUMBLE_H
 #define RUMBLE_H
 
+namespace SwitchKit {
 struct HDRumbleFreqAmpConfig {
     double frequency = 0.0;
     double amplitude = 0.0;
@@ -40,5 +41,6 @@ private:
     static uint16_t amplitude_to_hf_amp(double p_amp);
     static uint8_t amplitude_to_lf_amp(double p_amp);
 };
+}
 
 #endif // RUMBLE_H

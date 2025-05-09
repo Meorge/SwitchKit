@@ -13,6 +13,7 @@
 #include "vectors.h"
 #include "rumble.h"
 
+namespace SwitchKit {
 enum SPIFlashReadAddress {
     SERIAL_NO = 0x6000,
     DEVICE_TYPE = 0x6012,
@@ -101,5 +102,6 @@ private:
     void update_stick_calibration(uint8_t *stick_cal, uint8_t size);
     void update_color_data(uint8_t *data, uint8_t size);
 };
+}
 
 #endif // SWITCH_CONTROLLER_H

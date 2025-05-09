@@ -9,6 +9,7 @@
 #include "battery_level.h"
 #include "imu.h"
 
+namespace SwitchKit {
 enum InputReportMode {
     ACTIVE_NFC_IR_POLLING = 0x00, // Used with command 0x11; 0x31 data format must be set first
     ACTIVE_NFC_IR_POLLING_CONFIG = 0x01,
@@ -161,5 +162,6 @@ struct JoyConReport
         }
     }
 };
+}
 
 #endif // JOYCON_REPORT_H

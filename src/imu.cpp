@@ -1,5 +1,6 @@
 #include "imu.h"
 
+namespace SwitchKit {
 Vector3 get_accel(const IMUPacket &p_packet) {
     Vector3 out;
     out.x = p_packet.accel_x * G_RANGE / SENSOR_RES / 1000.0;
@@ -22,4 +23,5 @@ Vector3 get_rotation_rev(const IMUPacket &p_packet) {
     out.y /= 360.0;
     out.z /= 360.0;
     return out;
+}
 }

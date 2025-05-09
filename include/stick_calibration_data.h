@@ -3,6 +3,7 @@
 
 #include <cstdint>
 
+namespace SwitchKit {
 struct StickCalibrationData {
     uint16_t x_min;
     uint16_t x_center;
@@ -12,5 +13,6 @@ struct StickCalibrationData {
     uint16_t y_center;
     uint16_t y_max;
 };
+}
 
 #endif // STICK_CALIBRATION_DATA_H

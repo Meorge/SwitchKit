@@ -2,6 +2,7 @@
 
 #include "extra_helpers.h"
 
+namespace SwitchKit {
 SwitchController::SwitchController(hid_device *p_handle) {
     handle = p_handle;
     if (!handle) {
@@ -426,4 +427,5 @@ void SwitchController::set_player_lights(PlayerLight p1, PlayerLight p2, PlayerL
 
     buf[11] = (p1) | (p2 << 1) | (p3 << 2) | (p4 << 3);
     hid_write(handle, buf, 0x40);
+}
 }

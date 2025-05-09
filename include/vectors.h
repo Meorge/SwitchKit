@@ -1,6 +1,7 @@
 #ifndef VECTORS_H
 #define VECTORS_H
 
+namespace SwitchKit {
 struct Vector2 {
     double x;
     double y;
@@ -33,5 +34,6 @@ struct Vector3 {
         z = p_z;
     }
 };
+}
 
 #endif // VECTORS_H

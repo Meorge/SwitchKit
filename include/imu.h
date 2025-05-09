@@ -9,6 +9,7 @@
 
 #include "vectors.h"
 
+namespace SwitchKit {
 struct IMUPacket {
     int16_t accel_x;
     int16_t accel_y;
@@ -22,5 +23,6 @@ struct IMUPacket {
 Vector3 get_accel(const IMUPacket &p_packet);
 Vector3 get_rotation_deg(const IMUPacket &p_packet);
 Vector3 get_rotation_rev(const IMUPacket &p_packet);
+}
 
 #endif // IMU_H
