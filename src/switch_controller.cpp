@@ -416,3 +416,14 @@ void SwitchController::update_color_data(uint8_t *data, uint8_t size) {
     printf("Body color: r=%d g=%d b=%d\n", colors.body_color.r, colors.body_color.g, colors.body_color.b);
     printf("Button color: r=%d g=%d b=%d\n", colors.button_color.r, colors.button_color.g, colors.button_color.b);
 }
+
+void SwitchController::set_player_lights(PlayerLight p1, PlayerLight p2, PlayerLight p3, PlayerLight p4) {
+    uint8_t buf[0x40];
+    bzero(buf, 0x40);
+    buf[0] = 1;
+    buf[1] = packet_num++;
+    buf[10] = SET_PLAYER_LIGHTS;
+
+    buf[11] = (p1) | (p2 << 1) | (p3 << 2) | (p4 << 3);
+    hid_write(handle, buf, 0x40);
+}

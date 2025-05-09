@@ -33,6 +33,7 @@ int main(void)
 	controller.request_stick_calibration();
 	controller.request_color_data();
 
+	controller.set_player_lights(SwitchController::ON, SwitchController::OFF, SwitchController::FLASH, SwitchController::ON);
 	controller.enable_ringcon();
 
 	HDRumbleConfig rumble;

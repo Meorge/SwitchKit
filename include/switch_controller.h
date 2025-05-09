@@ -80,6 +80,14 @@ public:
 
     void rumble(const HDRumbleConfig &p_config);
 
+    enum PlayerLight {
+        OFF,
+        ON = 0x01,
+        FLASH = 0x10
+    };
+
+    void set_player_lights(PlayerLight p1, PlayerLight p2, PlayerLight p3, PlayerLight p4);
+
     void write_to_hid(SPIFlashReadSubcommand cmd);
 
     Vector2 get_stick(Stick stick) const;
