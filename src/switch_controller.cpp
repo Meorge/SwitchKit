@@ -18,15 +18,24 @@ void SwitchController::poll() {
     report = JoyConReport(buf);
 
     switch (report.report_type) {
-        case JoyConReport::InputReportType::SUBCOMMAND_REPLY:
-        {
-            if (report.subcommand_reply.reply_to != 0) {
-                printf("Report subcommand reply is 0x%02X\n", report.subcommand_reply.reply_to);
-            }
-        }
-        case JoyConReport::InputReportType::STANDARD:
-        {
-        }
+        case JoyConReport::NONE:
+            break;
+        case JoyConReport::BASIC:
+            break;
+        case JoyConReport::SUBCOMMAND_REPLY:
+            break;
+        case JoyConReport::NFC_IR_MCU_FR_UPDATE_INPUT_REPORT:
+            break;
+        case JoyConReport::STANDARD:
+            break;
+        case JoyConReport::STANDARD_WITH_NFC_IR_MCU:
+            break;
+        case JoyConReport::UNKNOWN_1:
+            break;
+        case JoyConReport::UNKNOWN_2:
+            break;
+        default:
+            break;
     }
 }
 
@@ -43,7 +52,6 @@ void SwitchController::request_device_info() {
         hid_read(handle, in_buf, 361);
         report = JoyConReport(in_buf);
         if (report.report_type == JoyConReport::InputReportType::SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == REQUEST_DEVICE_INFO) {
-            printf("Device info received!\n");
             handle_request_device_info(report.subcommand_reply.data);
             break;
         }
@@ -61,7 +69,6 @@ void SwitchController::set_input_report_mode(InputReportMode mode) {
         hid_read(handle, in_buf, 361);
         report = JoyConReport(in_buf);
         if (report.report_type == JoyConReport::InputReportType::SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == SET_INPUT_REPORT_MODE) {
-            printf("Set input report mode received!\n");
             break;
         }
     }
@@ -82,14 +89,12 @@ void SwitchController::set_imu_enabled(bool enabled) {
         hid_read(handle, in_buf, 361);
         report = JoyConReport(in_buf);
         if (report.report_type == JoyConReport::InputReportType::SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == ENABLE_IMU) {
-            printf("Enable IMU received!\n");
             break;
         }
     }
 }
 
 void SwitchController::set_mcu_enabled(bool enabled) {
-    printf("Enabling MCU...\n");
     bzero(buf, 0x40);
     buf[0] = 1;
     buf[1] = packet_num++;
@@ -102,7 +107,6 @@ void SwitchController::set_mcu_enabled(bool enabled) {
         hid_read(handle, in_buf, 361);
         report = JoyConReport(in_buf);
         if (report.report_type == JoyConReport::InputReportType::SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == SET_NFC_IR_MCU_STATE) {
-            printf("Set MCU state received!\n");
             break;
         }
     }
@@ -145,24 +149,17 @@ void SwitchController::configure_mcu(uint8_t command, uint8_t subcommand, uint8_
     memcpy(buf + 11, subcommand_data, sizeof(subcommand_data));
     hid_write(handle, buf, 0x40);
 
-    printf("Attempting to configure MCU...\n");
     while (true) {
         uint8_t in_buf[361];
         hid_read(handle, in_buf, 361);
         report = JoyConReport(in_buf);
         if (report.report_type == JoyConReport::InputReportType::SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == SET_NFC_IR_MCU_CONFIG) {
-            printf("Configure MCU response received!\n");
-            for (int i = 0; i < 35; i++) {
-                printf("%02X ", report.subcommand_reply.data[i]);
-            }
-            printf("\n");
             break;
         }
     }
 }
 
 uint16_t SwitchController::get_external_device_id() {
-    printf("Checking if Ring-Con is connected...\n");
     bzero(buf, 0x40);
     buf[0] = 1;
     buf[1] = packet_num++;
@@ -174,19 +171,18 @@ uint16_t SwitchController::get_external_device_id() {
         hid_read(handle, in_buf, 361);
         report = JoyConReport(in_buf);
         if (report.report_type == JoyConReport::InputReportType::SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == 0x59) {
-            printf("Response on external device info received!\n");
             return *((uint16_t*)report.subcommand_reply.data);
         }
     }
 }
 
-void SwitchController::set_external_format_config(uint8_t *data) {
+void SwitchController::set_external_format_config(uint8_t *data, uint8_t size) {
     uint8_t buf[0x40];
     bzero(buf, 0x40);
     buf[0] = 1;
     buf[1] = packet_num++;
     buf[10] = 0x5C; // SET_EXTERNAL_FORMAT_CONFIG
-    memcpy(buf + 11, data, sizeof(data));
+    memcpy(buf + 11, data, size);
     hid_write(handle, buf, 0x40);
 
     while (true) {
@@ -199,13 +195,13 @@ void SwitchController::set_external_format_config(uint8_t *data) {
     }
 }
 
-void SwitchController::enable_external_polling(uint8_t *data) {
+void SwitchController::enable_external_polling(uint8_t *data, uint8_t size) {
     uint8_t buf[0x40];
     bzero(buf, 0x40);
     buf[0] = 1;
     buf[1] = packet_num++;
     buf[10] = 0x5A; // ENABLE_EXTERNAL_POLLING
-    memcpy(buf + 11, data, sizeof(data));
+    memcpy(buf + 11, data, size);
     hid_write(handle, buf, 0x40);
 
     while (true) {
@@ -230,24 +226,23 @@ void SwitchController::enable_ringcon() {
 
     // Check if ring is connected
     uint16_t external_id = get_external_device_id();
-    printf("External device connected: 0x%04X\n", external_id);
 
     // Send SET_EXTERNAL_FORMAT_CONFIG with data
     uint8_t ext_format_config[] = { 0x06, 0x03, 0x25, 0x06, 0x00, 0x00, 0x00, 0x00, 0x1C, 0x16, 0xED, 0x34, 0x36,
         0x00, 0x00, 0x00, 0x0A, 0x64, 0x0B, 0xE6, 0xA9, 0x22, 0x00, 0x00, 0x04, 0x00,
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x90, 0xA8, 0xE1, 0x34, 0x36 };
-    set_external_format_config(ext_format_config);
+    set_external_format_config(ext_format_config, 37);
 
     // Set ENABLE_EXTERNAL_POLLING with data
     uint8_t enable_external_polling_data[] = { 0x04, 0x01, 0x01, 0x02 };
-    enable_external_polling(enable_external_polling_data);
+    enable_external_polling(enable_external_polling_data, 4);
 }
 
 double SwitchController::get_ringcon_flex() {
     double low_bound = 2280.0 - 2500.0;
     double high_bound = 2280.0 + 2500.0;
     double current = (double)report.imu_packets[2].accel_y;
-    return INV_LERP(low_bound, high_bound, current);
+    return INV_LERP(2280.0, high_bound, current);
 }
 
 void SwitchController::request_stick_calibration() {
@@ -261,7 +256,6 @@ void SwitchController::request_stick_calibration() {
         hid_read(handle, in_buf, 361);
         report = JoyConReport(in_buf);
         if (report.report_type == JoyConReport::InputReportType::SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == SPI_FLASH_READ) {
-            printf("Stick calibration data(?) received!\n");
             handle_spi_flash_read(report.subcommand_reply.data);
             break;
         }
@@ -279,7 +273,6 @@ void SwitchController::request_color_data() {
         hid_read(handle, in_buf, 361);
         report = JoyConReport(in_buf);
         if (report.report_type == JoyConReport::InputReportType::SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == SPI_FLASH_READ) {
-            printf("Color data(?) received!\n");
             handle_spi_flash_read(report.subcommand_reply.data);
             break;
         }
@@ -305,7 +298,7 @@ void SwitchController::handle_spi_flash_read(uint8_t *reply) {
 
 	uint8_t data[size];
 	memcpy(data, reply + sizeof(uint32_t) + sizeof(uint8_t), size);
-
+    
     switch (addr) {
         case 0x5000: // Shipment data
             break;
@@ -314,6 +307,7 @@ void SwitchController::handle_spi_flash_read(uint8_t *reply) {
         case FACTORY_IMU_CALIBRATION:
             break;
         case FACTORY_STICK_CALIBRATION:
+            update_stick_calibration(data, size);
             break;
         case COLOR_DATA:
             update_color_data(data, size);
@@ -335,8 +329,6 @@ void SwitchController::handle_spi_flash_read(uint8_t *reply) {
 
 void SwitchController::update_stick_calibration(uint8_t *stick_cal, uint8_t size) {
 	// https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/spi_flash_notes.md#analog-stick-factory-and-user-calibration
-	printf("Stick calibration time!\n");
-
     if (size != 0x12) {
         printf("Size of data for stick calibration is %d but it should be %d\n", size, 0x12);
         return;
@@ -394,7 +386,7 @@ Vector2 SwitchController::get_stick(Stick stick) const {
             x_raw = static_cast<double>(report.rs_x);
             y_raw = static_cast<double>(report.rs_y);
             x_min = static_cast<double>(rs_calib.x_min);
-            y_max = static_cast<double>(rs_calib.x_max);
+            x_max = static_cast<double>(rs_calib.x_max);
             y_min = static_cast<double>(rs_calib.y_min);
             y_max = static_cast<double>(rs_calib.y_max);
             break;
@@ -411,11 +403,20 @@ void SwitchController::update_color_data(uint8_t *data, uint8_t size) {
         printf("Color data size was 0x%X but should have been 0x0B\n", size);
         return;
     }
-
     memcpy(&colors, (SwitchControllerColors*)data, sizeof(SwitchControllerColors));
+}
 
-    printf("Body color: r=%d g=%d b=%d\n", colors.body_color.r, colors.body_color.g, colors.body_color.b);
-    printf("Button color: r=%d g=%d b=%d\n", colors.button_color.r, colors.button_color.g, colors.button_color.b);
+Color24 SwitchController::get_color(ColorRole role) const {
+    switch (role) {
+        case COLOR_BODY:
+            return colors.body_color;
+        case COLOR_BUTTON:
+            return colors.button_color;
+        case COLOR_LEFT_GRIP:
+            return colors.left_grip_color;
+        case COLOR_RIGHT_GRIP:
+            return colors.right_grip_color;
+    }
 }
 
 void SwitchController::set_player_lights(PlayerLight p1, PlayerLight p2, PlayerLight p3, PlayerLight p4) {

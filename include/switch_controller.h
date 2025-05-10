@@ -57,21 +57,28 @@ class SwitchController
     uint8_t packet_num = 0;
 
 public:
+    BatteryLevel get_battery_level() const { return report.battery_level; }
+    bool get_battery_charging() const { return report.is_charging; }
+    SwitchControllerType get_controller_type() const { return info.type; }
+
+    bool get_button(JoyConReport::Button button) { return report.get_button(button); }
+
     enum Stick
     {
         LEFT,
         RIGHT
     };
+    Vector2 get_stick(Stick stick) const;
+
     void set_input_report_mode(InputReportMode mode);
     void set_imu_enabled(bool enabled);
     void set_mcu_enabled(bool enabled);
     void configure_mcu(uint8_t command, uint8_t subcommand, uint8_t mode);
     uint16_t get_external_device_id();
-    void set_external_format_config(uint8_t *data);
-    void enable_external_polling(uint8_t *data);
+    void set_external_format_config(uint8_t *data, uint8_t size);
+    void enable_external_polling(uint8_t *data, uint8_t size);
 
     void enable_ringcon();
-
     double get_ringcon_flex();
 
     void request_device_info();
@@ -89,9 +96,17 @@ public:
 
     void set_player_lights(PlayerLight p1, PlayerLight p2, PlayerLight p3, PlayerLight p4);
 
+    enum ColorRole {
+        COLOR_BODY,
+        COLOR_BUTTON,
+        COLOR_LEFT_GRIP,
+        COLOR_RIGHT_GRIP
+    };
+    Color24 get_color(ColorRole role) const;
+
     void write_to_hid(SPIFlashReadSubcommand cmd);
 
-    Vector2 get_stick(Stick stick) const;
+    
 
     SwitchController(hid_device *p_handle);
     ~SwitchController();

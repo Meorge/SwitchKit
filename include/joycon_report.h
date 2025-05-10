@@ -161,6 +161,61 @@ struct JoyConReport
             memcpy(imu_packets, buf + 13, sizeof(IMUPacket) * 3);
         }
     }
+
+public:
+    enum Button {
+        A,
+        B,
+        X,
+        Y,
+
+        SR,
+        SL,
+        R,
+        ZR,
+
+        MINUS,
+        PLUS,
+        STICK_R,
+        STICK_L,
+        HOME,
+        CAPTURE,
+        CHARGING_GRIP,
+
+        DOWN,
+        UP,
+        RIGHT,
+        LEFT,
+        L,
+        ZL
+    };
+    bool get_button(Button button) {
+        switch (button) {
+            case A: return btn_a;
+            case B: return btn_b;
+            case X: return btn_x;
+            case Y: return btn_y;
+            case SR: return btn_sr;
+            case SL: return btn_sl;
+            case R: return btn_r;
+            case ZR: return btn_zr;
+    
+            case MINUS: return btn_minus;
+            case PLUS: return btn_plus;
+            case STICK_R: return btn_rstick;
+            case STICK_L: return btn_lstick;
+            case HOME: return btn_home;
+            case CAPTURE: return btn_capture;
+            case CHARGING_GRIP: return btn_charginggrip;
+            
+            case DOWN: return btn_down;
+            case UP: return btn_up;
+            case RIGHT: return btn_right;
+            case LEFT: return btn_left;
+            case L: return btn_l;
+            case ZL: return btn_zl;
+        }
+    }
 };
 }
 
