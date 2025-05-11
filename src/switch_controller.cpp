@@ -265,7 +265,7 @@ void SwitchController::request_stick_calibration() {
 void SwitchController::request_imu_calibration() {
     SPIFlashReadSubcommand cmd;
     cmd.address = FACTORY_IMU_CALIBRATION;
-    cmd.size = 0x6037 - FACTORY_IMU_CALIBRATION;
+    cmd.size = 24;
     write_to_hid(cmd);
 
     while (true) {
@@ -282,7 +282,7 @@ void SwitchController::request_imu_calibration() {
 void SwitchController::request_color_data() {
     SPIFlashReadSubcommand cmd;
     cmd.address = COLOR_DATA;
-    cmd.size = 0x605B - COLOR_DATA;
+    cmd.size = 12;
     write_to_hid(cmd);
 
     while (true) {
@@ -391,7 +391,7 @@ void SwitchController::update_stick_calibration(uint8_t *stick_cal, uint8_t size
 
 
 void SwitchController::update_imu_calibration(uint8_t *data, uint8_t size) {
-    memcpy(&imu_calib, (int16_t*)data, size);
+    memcpy(&imu_calib, data, size);
 }
 
 Vector2 SwitchController::get_stick(Stick stick) const {
@@ -439,17 +439,12 @@ Vector3 SwitchController::get_accel() const {
 }
 
 Vector3 SwitchController::get_gyro() const {
-    double x = 0, y = 0, z = 0;
-    for (int i = 0; i < 3; i++) {
-        Vector3 gyro = report.imu_packets[i].get_gyro(imu_calib);
-        x += gyro.x;
-        y += gyro.y;
-        z += gyro.z;
-    }
-    x /= 3.0;
-    y /= 3.0;
-    z /= 3.0;
-    return Vector3(x, y, z);
+    Vector3 val = report.imu_packets[0].get_gyro(imu_calib);
+    double delta_time = 0.005; // 5ms
+    val.x *= delta_time;
+    val.y *= delta_time;
+    val.z *= delta_time;
+    return val;
 }
 
 void SwitchController::update_color_data(uint8_t *data, uint8_t size) {

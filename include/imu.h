@@ -11,21 +11,21 @@
 
 namespace SwitchKit {
 struct IMUCalibrationData {
-    int16_t acc_x_stable;
-    int16_t acc_y_stable;
-    int16_t acc_z_stable;
+    int16_t cal_acc_origin_x;
+    int16_t cal_acc_origin_y;
+    int16_t cal_acc_origin_z;
 
-    int16_t acc_x_coeff;
-    int16_t acc_y_coeff;
-    int16_t acc_z_coeff;
+    int16_t cal_acc_horizontal_offset_x;
+    int16_t cal_acc_horizontal_offset_y;
+    int16_t cal_acc_horizontal_offset_z;
 
-    int16_t gyro_x_stable;
-    int16_t gyro_y_stable;
-    int16_t gyro_z_stable;
+    int16_t cal_gyro_offset_x;
+    int16_t cal_gyro_offset_y;
+    int16_t cal_gyro_offset_z;
 
-    int16_t gyro_x_coeff;
-    int16_t gyro_y_coeff;
-    int16_t gyro_z_coeff;
+    int16_t cal_gyro_coeff_x;
+    int16_t cal_gyro_coeff_y;
+    int16_t cal_gyro_coeff_z;
 };
 
 struct IMUPacket {
