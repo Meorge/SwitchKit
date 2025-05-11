@@ -262,6 +262,23 @@ void SwitchController::request_stick_calibration() {
     }
 }
 
+void SwitchController::request_imu_calibration() {
+    SPIFlashReadSubcommand cmd;
+    cmd.address = FACTORY_IMU_CALIBRATION;
+    cmd.size = 0x6037 - FACTORY_IMU_CALIBRATION;
+    write_to_hid(cmd);
+
+    while (true) {
+        uint8_t in_buf[361];
+        hid_read(handle, in_buf, 361);
+        report = JoyConReport(in_buf);
+        if (report.report_type == JoyConReport::InputReportType::SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == SPI_FLASH_READ) {
+            handle_spi_flash_read(report.subcommand_reply.data);
+            break;
+        }
+    }
+}
+
 void SwitchController::request_color_data() {
     SPIFlashReadSubcommand cmd;
     cmd.address = COLOR_DATA;
@@ -305,6 +322,7 @@ void SwitchController::handle_spi_flash_read(uint8_t *reply) {
         case SERIAL_NO:
             break;
         case FACTORY_IMU_CALIBRATION:
+            update_imu_calibration(data, size);
             break;
         case FACTORY_STICK_CALIBRATION:
             update_stick_calibration(data, size);
@@ -370,6 +388,12 @@ void SwitchController::update_stick_calibration(uint8_t *stick_cal, uint8_t size
     rs_calib.y_max = rs_data[1] + rs_data[5];
 }
 
+
+
+void SwitchController::update_imu_calibration(uint8_t *data, uint8_t size) {
+    memcpy(&imu_calib, (int16_t*)data, size);
+}
+
 Vector2 SwitchController::get_stick(Stick stick) const {
     double x_raw, x_min, x_max;
     double y_raw, y_min, y_max;
@@ -417,7 +441,7 @@ Vector3 SwitchController::get_accel() const {
 Vector3 SwitchController::get_gyro() const {
     double x = 0, y = 0, z = 0;
     for (int i = 0; i < 3; i++) {
-        Vector3 gyro = report.imu_packets[i].get_gyro();
+        Vector3 gyro = report.imu_packets[i].get_gyro(imu_calib);
         x += gyro.x;
         y += gyro.y;
         z += gyro.z;

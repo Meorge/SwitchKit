@@ -4,6 +4,7 @@
 
 #include "switch_controller.h"
 // #include "joycon_report.h"
+#include "vectors.h"
 
 #define MAX_STR 256
 
@@ -31,6 +32,7 @@ int main(void)
 	controller.set_imu_enabled(true);
 	controller.request_device_info();
 	controller.request_stick_calibration();
+	controller.request_imu_calibration();
 	controller.request_color_data();
 
 	controller.set_player_lights(SwitchKit::SwitchController::ON, SwitchKit::SwitchController::OFF, SwitchKit::SwitchController::FLASH, SwitchKit::SwitchController::ON);
@@ -48,19 +50,21 @@ int main(void)
 	while (true)
 	{
 		controller.poll();
-
+		
+		SwitchKit::Vector3 g = controller.get_gyro();
+		printf("Gyro: %.2lf, %.2lf, %.2lf\n", g.x, g.y, g.z);
 		// auto ls = controller.get_stick(SwitchKit::SwitchController::Stick::LEFT);
-		auto rs = controller.get_stick(SwitchKit::SwitchController::Stick::RIGHT);
+		// auto rs = controller.get_stick(SwitchKit::SwitchController::Stick::RIGHT);
 
-		printf("right stick %.2lf, %.2lf\n", rs.x, rs.y);
+		// printf("right stick %.2lf, %.2lf\n", rs.x, rs.y);
 
-		// printf("Flex: %.2lf\n", controller.get_ringcon_flex());
+		// // printf("Flex: %.2lf\n", controller.get_ringcon_flex());
 
-		if (controller.get_ringcon_flex() > 0.65) {
-			controller.rumble(rumble);
-		} else {
-			controller.rumble(no_rumble);
-		}
+		// if (controller.get_ringcon_flex() > 0.65) {
+		// 	controller.rumble(rumble);
+		// } else {
+		// 	controller.rumble(no_rumble);
+		// }
 		
 	}
 
