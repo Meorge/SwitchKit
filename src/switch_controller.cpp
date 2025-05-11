@@ -398,6 +398,36 @@ Vector2 SwitchController::get_stick(Stick stick) const {
     return Vector2(x, y);
 }
 
+Vector3 SwitchController::get_accel() const {
+    // NOTE: When the Ring-Con is connected, we will only want to read from
+    // the first two acceleration packets (it uses the third one to pass flex data).
+    double x = 0, y = 0, z = 0;
+    for (int i = 0; i < 3; i++) {
+        Vector3 acc = report.imu_packets[i].get_accel();
+        x += acc.x;
+        y += acc.y;
+        z += acc.z;
+    }
+    x /= 3.0;
+    y /= 3.0;
+    z /= 3.0;
+    return Vector3(x, y, z);
+}
+
+Vector3 SwitchController::get_gyro() const {
+    double x = 0, y = 0, z = 0;
+    for (int i = 0; i < 3; i++) {
+        Vector3 gyro = report.imu_packets[i].get_gyro();
+        x += gyro.x;
+        y += gyro.y;
+        z += gyro.z;
+    }
+    x /= 3.0;
+    y /= 3.0;
+    z /= 3.0;
+    return Vector3(x, y, z);
+}
+
 void SwitchController::update_color_data(uint8_t *data, uint8_t size) {
     if (size != 0x0B) {
         printf("Color data size was 0x%X but should have been 0x0B\n", size);

@@ -70,6 +70,9 @@ public:
     };
     Vector2 get_stick(Stick stick) const;
 
+    Vector3 get_accel() const;
+    Vector3 get_gyro() const;
+
     void set_input_report_mode(InputReportMode mode);
     void set_imu_enabled(bool enabled);
     void set_mcu_enabled(bool enabled);
