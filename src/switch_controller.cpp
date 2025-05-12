@@ -15,24 +15,20 @@ SwitchController::~SwitchController() {
 
 void SwitchController::poll() {
     hid_read(handle, buf, 361);
-    report = JoyConReport(buf);
+    report = SwitchControllerReport(buf);
 
     switch (report.report_type) {
-        case JoyConReport::NONE:
+        case SwitchControllerReport::REPORT_NONE:
             break;
-        case JoyConReport::BASIC:
+        case SwitchControllerReport::REPORT_BASIC:
             break;
-        case JoyConReport::SUBCOMMAND_REPLY:
+        case SwitchControllerReport::REPORT_SUBCOMMAND_REPLY:
             break;
-        case JoyConReport::NFC_IR_MCU_FR_UPDATE_INPUT_REPORT:
+        case SwitchControllerReport::REPORT_NFC_IR_MCU_FR_UPDATE_INPUT_REPORT:
             break;
-        case JoyConReport::STANDARD:
+        case SwitchControllerReport::REPORT_STANDARD:
             break;
-        case JoyConReport::STANDARD_WITH_NFC_IR_MCU:
-            break;
-        case JoyConReport::UNKNOWN_1:
-            break;
-        case JoyConReport::UNKNOWN_2:
+        case SwitchControllerReport::REPORT_STANDARD_WITH_NFC_IR_MCU:
             break;
         default:
             break;
@@ -50,8 +46,8 @@ void SwitchController::request_device_info() {
     while (true) {
         uint8_t in_buf[361];
         hid_read(handle, in_buf, 361);
-        report = JoyConReport(in_buf);
-        if (report.report_type == JoyConReport::InputReportType::SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == REQUEST_DEVICE_INFO) {
+        report = SwitchControllerReport(in_buf);
+        if (report.report_type == SwitchControllerReport::InputReportType::REPORT_SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == REQUEST_DEVICE_INFO) {
             handle_request_device_info(report.subcommand_reply.data);
             break;
         }
@@ -67,8 +63,8 @@ void SwitchController::set_input_report_mode(InputReportMode mode) {
     while (true) {
         uint8_t in_buf[361];
         hid_read(handle, in_buf, 361);
-        report = JoyConReport(in_buf);
-        if (report.report_type == JoyConReport::InputReportType::SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == SET_INPUT_REPORT_MODE) {
+        report = SwitchControllerReport(in_buf);
+        if (report.report_type == SwitchControllerReport::InputReportType::REPORT_SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == SET_INPUT_REPORT_MODE) {
             break;
         }
     }
@@ -87,8 +83,8 @@ void SwitchController::set_imu_enabled(bool enabled) {
     while (true) {
         uint8_t in_buf[361];
         hid_read(handle, in_buf, 361);
-        report = JoyConReport(in_buf);
-        if (report.report_type == JoyConReport::InputReportType::SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == ENABLE_IMU) {
+        report = SwitchControllerReport(in_buf);
+        if (report.report_type == SwitchControllerReport::InputReportType::REPORT_SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == ENABLE_IMU) {
             break;
         }
     }
@@ -105,8 +101,8 @@ void SwitchController::set_mcu_enabled(bool enabled) {
     while (true) {
         uint8_t in_buf[361];
         hid_read(handle, in_buf, 361);
-        report = JoyConReport(in_buf);
-        if (report.report_type == JoyConReport::InputReportType::SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == SET_NFC_IR_MCU_STATE) {
+        report = SwitchControllerReport(in_buf);
+        if (report.report_type == SwitchControllerReport::InputReportType::REPORT_SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == SET_NFC_IR_MCU_STATE) {
             break;
         }
     }
@@ -152,8 +148,8 @@ void SwitchController::configure_mcu(uint8_t command, uint8_t subcommand, uint8_
     while (true) {
         uint8_t in_buf[361];
         hid_read(handle, in_buf, 361);
-        report = JoyConReport(in_buf);
-        if (report.report_type == JoyConReport::InputReportType::SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == SET_NFC_IR_MCU_CONFIG) {
+        report = SwitchControllerReport(in_buf);
+        if (report.report_type == SwitchControllerReport::InputReportType::REPORT_SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == SET_NFC_IR_MCU_CONFIG) {
             break;
         }
     }
@@ -169,8 +165,8 @@ uint16_t SwitchController::get_external_device_id() {
     while (true) {
         uint8_t in_buf[361];
         hid_read(handle, in_buf, 361);
-        report = JoyConReport(in_buf);
-        if (report.report_type == JoyConReport::InputReportType::SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == 0x59) {
+        report = SwitchControllerReport(in_buf);
+        if (report.report_type == SwitchControllerReport::InputReportType::REPORT_SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == 0x59) {
             return *((uint16_t*)report.subcommand_reply.data);
         }
     }
@@ -188,8 +184,8 @@ void SwitchController::set_external_format_config(uint8_t *data, uint8_t size) {
     while (true) {
         uint8_t in_buf[361];
         hid_read(handle, in_buf, 361);
-        report = JoyConReport(in_buf);
-        if (report.report_type == JoyConReport::InputReportType::SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == 0x5C) {
+        report = SwitchControllerReport(in_buf);
+        if (report.report_type == SwitchControllerReport::InputReportType::REPORT_SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == 0x5C) {
             break;
         }
     }
@@ -207,8 +203,8 @@ void SwitchController::enable_external_polling(uint8_t *data, uint8_t size) {
     while (true) {
         uint8_t in_buf[361];
         hid_read(handle, in_buf, 361);
-        report = JoyConReport(in_buf);
-        if (report.report_type == JoyConReport::InputReportType::SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == 0x5A) {
+        report = SwitchControllerReport(in_buf);
+        if (report.report_type == SwitchControllerReport::InputReportType::REPORT_SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == 0x5A) {
             break;
         }
     }
@@ -254,8 +250,8 @@ void SwitchController::request_stick_calibration() {
     while (true) {
         uint8_t in_buf[361];
         hid_read(handle, in_buf, 361);
-        report = JoyConReport(in_buf);
-        if (report.report_type == JoyConReport::InputReportType::SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == SPI_FLASH_READ) {
+        report = SwitchControllerReport(in_buf);
+        if (report.report_type == SwitchControllerReport::InputReportType::REPORT_SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == SPI_FLASH_READ) {
             handle_spi_flash_read(report.subcommand_reply.data);
             break;
         }
@@ -271,8 +267,8 @@ void SwitchController::request_imu_calibration() {
     while (true) {
         uint8_t in_buf[361];
         hid_read(handle, in_buf, 361);
-        report = JoyConReport(in_buf);
-        if (report.report_type == JoyConReport::InputReportType::SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == SPI_FLASH_READ) {
+        report = SwitchControllerReport(in_buf);
+        if (report.report_type == SwitchControllerReport::InputReportType::REPORT_SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == SPI_FLASH_READ) {
             handle_spi_flash_read(report.subcommand_reply.data);
             break;
         }
@@ -288,8 +284,8 @@ void SwitchController::request_color_data() {
     while (true) {
         uint8_t in_buf[361];
         hid_read(handle, in_buf, 361);
-        report = JoyConReport(in_buf);
-        if (report.report_type == JoyConReport::InputReportType::SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == SPI_FLASH_READ) {
+        report = SwitchControllerReport(in_buf);
+        if (report.report_type == SwitchControllerReport::InputReportType::REPORT_SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == SPI_FLASH_READ) {
             handle_spi_flash_read(report.subcommand_reply.data);
             break;
         }

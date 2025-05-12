@@ -1,43 +1,35 @@
 #ifndef JOYCON_REPORT_H
 #define JOYCON_REPORT_H
 
-#include <stdio.h>
-#include <cstdint>
-#include <cstring>
-
 #include "subcommand.h"
 #include "battery_level.h"
 #include "imu.h"
 
 namespace SwitchKit {
 enum InputReportMode {
-    ACTIVE_NFC_IR_POLLING = 0x00, // Used with command 0x11; 0x31 data format must be set first
-    ACTIVE_NFC_IR_POLLING_CONFIG = 0x01,
-    ACTIVE_NFC_IR_POLLING_DATA_CONFIG = 0x02,
-    ACTIVE_IR_CAMERA_POLLING = 0x03,
-    MCU_UPDATE_STATE_REPORT_UNK = 0x23,
-    STANDARD = 0x30,
-    NFC_IR = 0x31,
-    UNKNOWN_1 = 0x33,
-    UNKNOWN_2 = 0x35,
+    MODE_ACTIVE_NFC_IR_POLLING = 0x00, // Used with command 0x11; 0x31 data format must be set first
+    MODE_ACTIVE_NFC_IR_POLLING_CONFIG = 0x01,
+    MODE_ACTIVE_NFC_IR_POLLING_DATA_CONFIG = 0x02,
+    MODE_ACTIVE_IR_CAMERA_POLLING = 0x03,
+    MODE_MCU_UPDATE_STATE_REPORT_UNK = 0x23,
+    MODE_STANDARD = 0x30,
+    MODE_NFC_IR = 0x31,
     BASIC = 0x3F
 };
 
-struct JoyConReport
+struct SwitchControllerReport
 {
     enum InputReportType
     {
-        NONE = 0x00,
-        BASIC = 0x3F,
-        SUBCOMMAND_REPLY = 0x21,
-        NFC_IR_MCU_FR_UPDATE_INPUT_REPORT = 0x23,
-        STANDARD = 0x30,
-        STANDARD_WITH_NFC_IR_MCU = 0x31,
-        UNKNOWN_1 = 0x32,
-        UNKNOWN_2 = 0x33
+        REPORT_NONE = 0x00,
+        REPORT_BASIC = 0x3F,
+        REPORT_SUBCOMMAND_REPLY = 0x21,
+        REPORT_NFC_IR_MCU_FR_UPDATE_INPUT_REPORT = 0x23,
+        REPORT_STANDARD = 0x30,
+        REPORT_STANDARD_WITH_NFC_IR_MCU = 0x31,
     };
 
-    InputReportType report_type = InputReportType::NONE;
+    InputReportType report_type = InputReportType::REPORT_NONE;
     char timer_value = 0;
 
     bool is_charging = false;
@@ -96,126 +88,37 @@ struct JoyConReport
     IMUPacket imu_packets[3]; // x30, x31, x32, x33
     NFCIRReport nfc_ir_report; // x31
     
-
-    JoyConReport() {}
-
-    JoyConReport(unsigned char *buf)
-    {
-        report_type = static_cast<InputReportType>(buf[0]);
-        timer_value = buf[1];
-
-        is_charging = ((buf[2] & 0x0f) & 0b0001) == 1;
-        battery_level = static_cast<BatteryLevel>((buf[2] & 0x0F) & 0b1110);
-
-        char r = buf[3];
-        btn_y = (r & 0x01);
-        btn_x = (r & 0x02);
-        btn_b = (r & 0x04);
-        btn_a = (r & 0x08);
-        btn_sr = (r & 0x10);
-        btn_sl = (r & 0x20);
-        btn_r = (r & 0x40);
-        btn_zr = (r & 0x80);
-
-        char s = buf[4];
-        btn_minus = (s & 0x01);
-        btn_plus = (s & 0x02);
-        btn_rstick = (s & 0x04);
-        btn_lstick = (s & 0x08);
-        btn_home = (s & 0x10);
-        btn_capture = (s & 0x20);
-        btn_charginggrip = (s & 0x80);
-
-        char l = buf[5];
-        btn_down = (l & 0x01);
-        btn_up = (l & 0x02);
-        btn_right = (l & 0x04);
-        btn_left = (l & 0x08);
-        btn_sr = (l & 0x10);
-        btn_sl = (l & 0x20);
-        btn_l = (l & 0x40);
-        btn_zl = (l & 0x80);
-
-        // Left stick
-        unsigned char *left_stick_data = buf + 6;
-        ls_x = left_stick_data[0] | ((left_stick_data[1] & 0xF) << 8);
-        ls_y = (left_stick_data[1] >> 4) | (left_stick_data[2] << 4);
-
-        // Right stick
-        unsigned char *right_stick_data = buf + 9;
-        rs_x = right_stick_data[0] | ((right_stick_data[1] & 0xF) << 8);
-        rs_y = (right_stick_data[1] >> 4) | (right_stick_data[2] << 4);
-
-        if (report_type == SUBCOMMAND_REPLY && buf[13] >> 7) {
-            // Subcommand was acknowledged.
-            // If data type is 0x00, it's a simple ACK.
-            bool ack = buf[13] >> 7;
-            auto data_type = buf[13] & 0x7F;
-
-            subcommand_reply.reply_to = buf[14];
-            memcpy(subcommand_reply.data, buf + 15, 35);
-        }
-
-        else if (report_type == STANDARD) {
-            // Unpack 6-axis data
-            memcpy(imu_packets, buf + 13, sizeof(IMUPacket) * 3);
-        }
-    }
+    SwitchControllerReport() {}
+    SwitchControllerReport(unsigned char *buf);
 
 public:
     enum Button {
-        A,
-        B,
-        X,
-        Y,
+        BTN_A,
+        BTN_B,
+        BTN_X,
+        BTN_Y,
 
-        SR,
-        SL,
-        R,
-        ZR,
+        BTN_SR,
+        BTN_SL,
+        BTN_R,
+        BTN_ZR,
 
-        MINUS,
-        PLUS,
-        STICK_R,
-        STICK_L,
-        HOME,
-        CAPTURE,
-        CHARGING_GRIP,
+        BTN_MINUS,
+        BTN_PLUS,
+        BTN_STICK_R,
+        BTN_STICK_L,
+        BTN_HOME,
+        BTN_CAPTURE,
+        BTN_CHARGING_GRIP,
 
-        DOWN,
-        UP,
-        RIGHT,
-        LEFT,
-        L,
-        ZL
+        BTN_DOWN,
+        BTN_UP,
+        BTN_RIGHT,
+        BTN_LEFT,
+        BTN_L,
+        BTN_ZL
     };
-    bool get_button(Button button) {
-        switch (button) {
-            case A: return btn_a;
-            case B: return btn_b;
-            case X: return btn_x;
-            case Y: return btn_y;
-            case SR: return btn_sr;
-            case SL: return btn_sl;
-            case R: return btn_r;
-            case ZR: return btn_zr;
-    
-            case MINUS: return btn_minus;
-            case PLUS: return btn_plus;
-            case STICK_R: return btn_rstick;
-            case STICK_L: return btn_lstick;
-            case HOME: return btn_home;
-            case CAPTURE: return btn_capture;
-            case CHARGING_GRIP: return btn_charginggrip;
-            
-            case DOWN: return btn_down;
-            case UP: return btn_up;
-            case RIGHT: return btn_right;
-            case LEFT: return btn_left;
-            case L: return btn_l;
-            case ZL: return btn_zl;
-        }
-    }
+    bool get_button(Button button);
 };
 }
 
