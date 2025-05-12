@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <cstring>
+#include <stdio.h>
 
 namespace SwitchKit {
 // From mod.rs in joy, which in turn appears to be from jc_toolkit
@@ -24,6 +25,10 @@ const uint8_t MCU_CRC8_TABLE[] = {
     0xAE, 0xA9, 0xA0, 0xA7, 0xB2, 0xB5, 0xBC, 0xBB, 0x96, 0x91, 0x98, 0x9F, 0x8A, 0x8D, 0x84, 0x83,
     0xDE, 0xD9, 0xD0, 0xD7, 0xC2, 0xC5, 0xCC, 0xCB, 0xE6, 0xE1, 0xE8, 0xEF, 0xFA, 0xFD, 0xF4, 0xF3,
 };
+
+uint8_t calc_crc8(uint8_t *data, uint8_t size);
+
+
 
 enum SubcommandType
 {
@@ -58,11 +63,25 @@ enum SubcommandType
 	ENABLE_VIBRATION = 0x48,
 	GET_REGULATED_VOLTAGE = 0x50,
 	SET_GPIO_PIN_OUTPUT_7_15_PORT_1 = 0x51,
-	GET_GPIO_PIN_IO_VALUE = 0x52
+	GET_GPIO_PIN_IO_VALUE = 0x52,
+	GET_EXTERNAL_DEVICE_INFO = 0x59,
+	ENABLE_EXTERNAL_POLLING = 0x5A,
+	SET_EXTERNAL_FORMAT_CONFIG = 0x5C
 };
 
 struct Subcommand {
-    static SubcommandType const type;
+protected:
+	static SubcommandType const type = GET_ONLY_CONTROLLER_STATE;
+
+	void init_build(uint8_t *buf, uint8_t packet_num) const {
+		bzero(buf, 0x40);
+		buf[0] = 1;
+		buf[1] = packet_num;
+		buf[10] = type;
+	}
+
+public:
+	void build(uint8_t *buf, uint8_t packet_num) const;
 };
 
 struct SetInputModeSubcommand: Subcommand {
@@ -70,11 +89,10 @@ struct SetInputModeSubcommand: Subcommand {
 
 	uint8_t mode;
 
-	void to_buf(uint8_t *buf, uint8_t packet_num) const {
+	void build(uint8_t *buf, uint8_t packet_num) const {
 		bzero(buf, 0x40);
 		buf[0] = 1;
 		buf[1] = packet_num;
-
 		buf[10] = type;
 		buf[11] = mode;
 	}
@@ -86,16 +104,128 @@ struct SPIFlashReadSubcommand: Subcommand {
     uint32_t address;
     uint8_t size;
 
-   	void to_buf(uint8_t *buf, uint8_t packet_num) const {
-        bzero(buf, 0x40);
-        buf[0] = 1;
-        buf[1] = packet_num;
-
-        buf[10] = type;
+   	void build(uint8_t *buf, uint8_t packet_num) const {
+		bzero(buf, 0x40);
+		buf[0] = 1;
+		buf[1] = packet_num;
+		buf[10] = type;
         memcpy(buf + 11, &address, sizeof(uint32_t));
         memcpy(buf + 11 + sizeof(uint32_t), &size, sizeof(uint8_t));
     }
 };
+
+struct RequestDeviceInfoSubcommand: Subcommand {
+	static SubcommandType const type = REQUEST_DEVICE_INFO;
+
+	void build(uint8_t *buf, uint8_t packet_num) const {
+		bzero(buf, 0x40);
+		buf[0] = 1;
+		buf[1] = packet_num;
+		buf[10] = type;
+	}
+};
+
+struct SetIMUEnabledSubcommand: Subcommand {
+	static SubcommandType const type = ENABLE_IMU;
+
+	bool enabled = false;
+
+	void build(uint8_t *buf, uint8_t packet_num) const {
+		bzero(buf, 0x40);
+		buf[0] = 1;
+		buf[1] = packet_num;
+		buf[10] = type;
+		buf[11] = enabled ? 0x01 : 0x00;
+	}
+};
+
+struct SetMCUEnabledSubcommand: Subcommand {
+	static SubcommandType const type = SET_NFC_IR_MCU_STATE;
+
+	bool enabled = false;
+
+	void build(uint8_t *buf, uint8_t packet_num) const {
+		bzero(buf, 0x40);
+		buf[0] = 1;
+		buf[1] = packet_num;
+		buf[10] = type;
+		buf[11] = enabled ? 0x01 : 0x00;
+	}
+};
+
+struct ConfigureMCUSubcommand: Subcommand {
+	static SubcommandType const type = SET_NFC_IR_MCU_CONFIG;
+
+	uint8_t command;
+	uint8_t subcommand;
+	uint8_t mode;
+
+	void build(uint8_t *buf, uint8_t packet_num) const {
+		bzero(buf, 0x40);
+		buf[0] = 1;
+		buf[1] = packet_num;
+		buf[10] = type;
+
+		uint8_t subcommand_data[38];
+		bzero(subcommand_data, 38);
+		subcommand_data[0] = command;
+		subcommand_data[1] = subcommand;
+		subcommand_data[2] = mode;
+
+		// Calculate CRC
+		uint8_t crc = 0;
+		uint8_t *d = subcommand_data + 1;
+		for (int i = 0; i < 36; i++) {
+			crc = SwitchKit::MCU_CRC8_TABLE[(uint8_t)(crc ^ d[i])];
+		}
+
+		subcommand_data[37] = crc;
+		memcpy(buf + 11, subcommand_data, sizeof(subcommand_data));
+	}
+};
+
+struct GetExternalDeviceIDSubcommand: Subcommand {
+	static SubcommandType const type = GET_EXTERNAL_DEVICE_INFO;
+
+	void build(uint8_t *buf, uint8_t packet_num) const {
+		bzero(buf, 0x40);
+		buf[0] = 1;
+		buf[1] = packet_num;
+		buf[10] = type;
+	}
+};
+
+struct SetExternalFormatConfigSubcommand: Subcommand {
+	static SubcommandType const type = SET_EXTERNAL_FORMAT_CONFIG;
+
+	uint8_t *data;
+	uint8_t size;
+	
+	void build(uint8_t *buf, uint8_t packet_num) const {
+		bzero(buf, 0x40);
+		buf[0] = 1;
+		buf[1] = packet_num;
+		buf[10] = type;
+		memcpy(buf + 11, data, size);
+	}
+};
+
+struct EnableExternalPollingSubcommand: Subcommand {
+	static SubcommandType const type = ENABLE_EXTERNAL_POLLING;
+
+	uint8_t *data;
+	uint8_t size;
+
+	void build(uint8_t *buf, uint8_t packet_num) const {
+		bzero(buf, 0x40);
+		buf[0] = 1;
+		buf[1] = packet_num;
+		buf[10] = type;
+		memcpy(buf + 11, data, size);
+	}
+};
+
+
 }
 
 #endif // SUBCOMMAND_H

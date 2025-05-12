@@ -37,10 +37,8 @@ void SwitchController::poll() {
 
 void SwitchController::request_device_info() {
     uint8_t buf[0x40];
-    bzero(buf, 0x40);
-    buf[0] = 1;
-    buf[1] = packet_num++;
-    buf[10] = REQUEST_DEVICE_INFO;
+    RequestDeviceInfoSubcommand cmd;
+    cmd.build(buf, packet_num++);
     hid_write(handle, buf, 0x40);
 
     while (true) {
@@ -58,8 +56,9 @@ void SwitchController::set_input_report_mode(InputReportMode mode) {
     uint8_t buf[0x40];
     SetInputModeSubcommand cmd;
     cmd.mode = mode;
-    cmd.to_buf(buf, packet_num++);
+    cmd.build(buf, packet_num++);
     hid_write(handle, buf, 0x40); // TODO: Make write_to_hid work for different commands
+
     while (true) {
         uint8_t in_buf[361];
         hid_read(handle, in_buf, 361);
@@ -72,12 +71,9 @@ void SwitchController::set_input_report_mode(InputReportMode mode) {
 
 void SwitchController::set_imu_enabled(bool enabled) {
     uint8_t buf[0x40];
-    bzero(buf, 0x40);
-    buf[0] = 1;
-    buf[1] = packet_num++;
-
-    buf[10] = ENABLE_IMU;
-    buf[11] = enabled ? 0x01 : 0x00;
+    SetIMUEnabledSubcommand cmd;
+    cmd.enabled = enabled;
+    cmd.build(buf, packet_num++);
     hid_write(handle, buf, 0x40);
 
     while (true) {
@@ -91,11 +87,10 @@ void SwitchController::set_imu_enabled(bool enabled) {
 }
 
 void SwitchController::set_mcu_enabled(bool enabled) {
-    bzero(buf, 0x40);
-    buf[0] = 1;
-    buf[1] = packet_num++;
-    buf[10] = SET_NFC_IR_MCU_STATE;
-    buf[11] = enabled ? 0x01 : 0x00; // Resume/standby mode
+    uint8_t buf[0x40];
+    SetMCUEnabledSubcommand cmd;
+    cmd.enabled = enabled;
+    cmd.build(buf, packet_num++);
     hid_write(handle, buf, 0x40);
 
     while (true) {
@@ -121,28 +116,13 @@ void SwitchController::rumble(const HDRumbleConfig &p_config) {
     hid_write(handle, buf, 0x40);
 }
 
-uint8_t calc_crc8(uint8_t *data, uint8_t size) {
-    uint8_t crc = 0;
-    for (int i = 0; i < size; i++) {
-        crc = MCU_CRC8_TABLE[(uint8_t)(crc ^ data[i])];
-    }
-    return crc;
-}
-
 void SwitchController::configure_mcu(uint8_t command, uint8_t subcommand, uint8_t mode) {
     uint8_t buf[0x40];
-    bzero(buf, 0x40);
-    buf[0] = 1;
-    buf[1] = packet_num++;
-    buf[10] = SET_NFC_IR_MCU_CONFIG;
-
-    uint8_t subcommand_data[38];
-    bzero(subcommand_data, 38);
-    subcommand_data[0] = command;
-    subcommand_data[1] = subcommand;
-    subcommand_data[2] = mode;
-    subcommand_data[37] = calc_crc8(subcommand_data + 1, 36);
-    memcpy(buf + 11, subcommand_data, sizeof(subcommand_data));
+    ConfigureMCUSubcommand cmd;
+    cmd.command = command;
+    cmd.subcommand = subcommand;
+    cmd.mode = mode;
+    cmd.build(buf, packet_num++);
     hid_write(handle, buf, 0x40);
 
     while (true) {
@@ -156,10 +136,9 @@ void SwitchController::configure_mcu(uint8_t command, uint8_t subcommand, uint8_
 }
 
 uint16_t SwitchController::get_external_device_id() {
-    bzero(buf, 0x40);
-    buf[0] = 1;
-    buf[1] = packet_num++;
-    buf[10] = 0x59; // GET_EXTERNAL_DEVICE_INFO
+    uint8_t buf[0x40];
+    GetExternalDeviceIDSubcommand cmd;
+    cmd.build(buf, packet_num++);
     hid_write(handle, buf, 0x40);
 
     while (true) {
@@ -174,11 +153,10 @@ uint16_t SwitchController::get_external_device_id() {
 
 void SwitchController::set_external_format_config(uint8_t *data, uint8_t size) {
     uint8_t buf[0x40];
-    bzero(buf, 0x40);
-    buf[0] = 1;
-    buf[1] = packet_num++;
-    buf[10] = 0x5C; // SET_EXTERNAL_FORMAT_CONFIG
-    memcpy(buf + 11, data, size);
+    SetExternalFormatConfigSubcommand cmd;
+    cmd.data = data;
+    cmd.size = size;
+    cmd.build(buf, packet_num++);
     hid_write(handle, buf, 0x40);
 
     while (true) {
@@ -193,11 +171,10 @@ void SwitchController::set_external_format_config(uint8_t *data, uint8_t size) {
 
 void SwitchController::enable_external_polling(uint8_t *data, uint8_t size) {
     uint8_t buf[0x40];
-    bzero(buf, 0x40);
-    buf[0] = 1;
-    buf[1] = packet_num++;
-    buf[10] = 0x5A; // ENABLE_EXTERNAL_POLLING
-    memcpy(buf + 11, data, size);
+    EnableExternalPollingSubcommand cmd;
+    cmd.data = data;
+    cmd.size = size;
+    cmd.build(buf, packet_num++);
     hid_write(handle, buf, 0x40);
 
     while (true) {
@@ -294,7 +271,7 @@ void SwitchController::request_color_data() {
 
 void SwitchController::write_to_hid(SPIFlashReadSubcommand cmd) {
     uint8_t buf[0x40];
-    cmd.to_buf(buf, packet_num++);
+    cmd.build(buf, packet_num++);
     hid_write(handle, buf, 0x40);
 }
 
@@ -444,7 +421,7 @@ Vector3 SwitchController::get_gyro() const {
 }
 
 void SwitchController::update_color_data(uint8_t *data, uint8_t size) {
-    if (size != 0x0B) {
+    if (size != 0x0C) {
         printf("Color data size was 0x%X but should have been 0x0B\n", size);
         return;
     }
