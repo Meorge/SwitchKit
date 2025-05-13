@@ -54,6 +54,7 @@ class SwitchController
     SwitchDeviceInfo info;
     SwitchControllerColors colors;
 
+    SwitchControllerReport prev_report;
     SwitchControllerReport report;
 
     uint8_t packet_num = 0;
@@ -63,6 +64,9 @@ public:
     bool get_battery_charging() const { return report.is_charging; }
     SwitchControllerType get_controller_type() const { return info.type; }
 
+    bool get_button_pressed_this_frame(SwitchControllerReport::Button button) {
+        return report.get_button(button) && !prev_report.get_button(button);
+    }
     bool get_button(SwitchControllerReport::Button button) { return report.get_button(button); }
 
     enum Stick

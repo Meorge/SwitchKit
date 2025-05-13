@@ -14,6 +14,7 @@ SwitchController::~SwitchController() {
 }
 
 void SwitchController::poll() {
+    prev_report = SwitchControllerReport(report);
     hid_read(handle, buf, 361);
     report = SwitchControllerReport(buf);
 
