@@ -59,6 +59,8 @@ class SwitchController
 
     uint8_t packet_num = 0;
 
+    bool ringcon_enabled = false;
+
 public:
     BatteryLevel get_battery_level() const { return report.battery_level; }
     bool get_battery_charging() const { return report.is_charging; }
@@ -83,11 +85,20 @@ public:
     void set_imu_enabled(bool enabled);
     void set_mcu_enabled(bool enabled);
     void configure_mcu(uint8_t command, uint8_t subcommand, uint8_t mode);
-    uint16_t get_external_device_id();
+
+    enum ExternalDevice {
+        EXT_NONE = 0x0,
+        EXT_RINGCON = 0x2000,
+        EXT_STARLINK = 0x2800
+    };
+    ExternalDevice get_external_device_id();
     void set_external_format_config(uint8_t *data, uint8_t size);
     void enable_external_polling(uint8_t *data, uint8_t size);
 
     void enable_ringcon();
+    void disable_ringcon();
+    bool get_ringcon_connected();
+    bool get_ringcon_enabled() const { return ringcon_enabled; }
     double get_ringcon_flex();
 
     void request_device_info();

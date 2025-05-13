@@ -136,7 +136,7 @@ void SwitchController::configure_mcu(uint8_t command, uint8_t subcommand, uint8_
     }
 }
 
-uint16_t SwitchController::get_external_device_id() {
+SwitchController::ExternalDevice SwitchController::get_external_device_id() {
     uint8_t buf[0x40];
     GetExternalDeviceIDSubcommand cmd;
     cmd.build(buf, packet_num++);
@@ -146,8 +146,8 @@ uint16_t SwitchController::get_external_device_id() {
         uint8_t in_buf[361];
         hid_read(handle, in_buf, 361);
         report = SwitchControllerReport(in_buf);
-        if (report.report_type == SwitchControllerReport::InputReportType::REPORT_SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == 0x59) {
-            return *((uint16_t*)report.subcommand_reply.data);
+        if (report.report_type == SwitchControllerReport::InputReportType::REPORT_SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == SCMD_GET_EXTERNAL_DEVICE_INFO) {
+            return (SwitchController::ExternalDevice)(*((uint16_t*)report.subcommand_reply.data));
         }
     }
 }
@@ -210,10 +210,22 @@ void SwitchController::enable_ringcon() {
     // Set ENABLE_EXTERNAL_POLLING with data
     uint8_t enable_external_polling_data[] = { 0x04, 0x01, 0x01, 0x02 };
     enable_external_polling(enable_external_polling_data, 4);
+
+    ringcon_enabled = true;
+}
+
+void SwitchController::disable_ringcon() {
+    set_mcu_enabled(false);
+    ringcon_enabled = false;
+}
+
+bool SwitchController::get_ringcon_connected() {
+    return get_external_device_id() == ExternalDevice::EXT_RINGCON;
 }
 
 double SwitchController::get_ringcon_flex() {
-    double low_bound = 2280.0 - 2500.0;
+    if (!ringcon_enabled) return 0.0;
+
     double high_bound = 2280.0 + 2500.0;
     double current = (double)report.imu_packets[2].accel_y;
     return INV_LERP(2280.0, high_bound, current);
