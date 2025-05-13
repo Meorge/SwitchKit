@@ -45,7 +45,7 @@ void SwitchController::request_device_info() {
         uint8_t in_buf[361];
         hid_read(handle, in_buf, 361);
         report = SwitchControllerReport(in_buf);
-        if (report.report_type == SwitchControllerReport::InputReportType::REPORT_SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == REQUEST_DEVICE_INFO) {
+        if (report.report_type == SwitchControllerReport::InputReportType::REPORT_SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == SCMD_REQUEST_DEVICE_INFO) {
             handle_request_device_info(report.subcommand_reply.data);
             break;
         }
@@ -63,7 +63,7 @@ void SwitchController::set_input_report_mode(InputReportMode mode) {
         uint8_t in_buf[361];
         hid_read(handle, in_buf, 361);
         report = SwitchControllerReport(in_buf);
-        if (report.report_type == SwitchControllerReport::InputReportType::REPORT_SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == SET_INPUT_REPORT_MODE) {
+        if (report.report_type == SwitchControllerReport::InputReportType::REPORT_SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == SCMD_SET_INPUT_REPORT_MODE) {
             break;
         }
     }
@@ -80,7 +80,7 @@ void SwitchController::set_imu_enabled(bool enabled) {
         uint8_t in_buf[361];
         hid_read(handle, in_buf, 361);
         report = SwitchControllerReport(in_buf);
-        if (report.report_type == SwitchControllerReport::InputReportType::REPORT_SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == ENABLE_IMU) {
+        if (report.report_type == SwitchControllerReport::InputReportType::REPORT_SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == SCMD_ENABLE_IMU) {
             break;
         }
     }
@@ -97,7 +97,7 @@ void SwitchController::set_mcu_enabled(bool enabled) {
         uint8_t in_buf[361];
         hid_read(handle, in_buf, 361);
         report = SwitchControllerReport(in_buf);
-        if (report.report_type == SwitchControllerReport::InputReportType::REPORT_SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == SET_NFC_IR_MCU_STATE) {
+        if (report.report_type == SwitchControllerReport::InputReportType::REPORT_SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == SCMD_SET_NFC_IR_MCU_STATE) {
             break;
         }
     }
@@ -129,7 +129,7 @@ void SwitchController::configure_mcu(uint8_t command, uint8_t subcommand, uint8_
         uint8_t in_buf[361];
         hid_read(handle, in_buf, 361);
         report = SwitchControllerReport(in_buf);
-        if (report.report_type == SwitchControllerReport::InputReportType::REPORT_SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == SET_NFC_IR_MCU_CONFIG) {
+        if (report.report_type == SwitchControllerReport::InputReportType::REPORT_SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == SCMD_SET_NFC_IR_MCU_CONFIG) {
             break;
         }
     }
@@ -220,7 +220,7 @@ double SwitchController::get_ringcon_flex() {
 
 void SwitchController::request_stick_calibration() {
 	SPIFlashReadSubcommand cmd;
-	cmd.address = FACTORY_STICK_CALIBRATION;
+	cmd.address = SPI_FACTORY_STICK_CALIBRATION;
 	cmd.size = 0x12;
     write_to_hid(cmd);
 
@@ -228,7 +228,7 @@ void SwitchController::request_stick_calibration() {
         uint8_t in_buf[361];
         hid_read(handle, in_buf, 361);
         report = SwitchControllerReport(in_buf);
-        if (report.report_type == SwitchControllerReport::InputReportType::REPORT_SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == SPI_FLASH_READ) {
+        if (report.report_type == SwitchControllerReport::InputReportType::REPORT_SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == SCMD_SPI_FLASH_READ) {
             handle_spi_flash_read(report.subcommand_reply.data);
             break;
         }
@@ -237,7 +237,7 @@ void SwitchController::request_stick_calibration() {
 
 void SwitchController::request_imu_calibration() {
     SPIFlashReadSubcommand cmd;
-    cmd.address = FACTORY_IMU_CALIBRATION;
+    cmd.address = SPI_FACTORY_IMU_CALIBRATION;
     cmd.size = 24;
     write_to_hid(cmd);
 
@@ -245,7 +245,7 @@ void SwitchController::request_imu_calibration() {
         uint8_t in_buf[361];
         hid_read(handle, in_buf, 361);
         report = SwitchControllerReport(in_buf);
-        if (report.report_type == SwitchControllerReport::InputReportType::REPORT_SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == SPI_FLASH_READ) {
+        if (report.report_type == SwitchControllerReport::InputReportType::REPORT_SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == SCMD_SPI_FLASH_READ) {
             handle_spi_flash_read(report.subcommand_reply.data);
             break;
         }
@@ -254,7 +254,7 @@ void SwitchController::request_imu_calibration() {
 
 void SwitchController::request_color_data() {
     SPIFlashReadSubcommand cmd;
-    cmd.address = COLOR_DATA;
+    cmd.address = SPI_COLOR_DATA;
     cmd.size = 12;
     write_to_hid(cmd);
 
@@ -262,7 +262,7 @@ void SwitchController::request_color_data() {
         uint8_t in_buf[361];
         hid_read(handle, in_buf, 361);
         report = SwitchControllerReport(in_buf);
-        if (report.report_type == SwitchControllerReport::InputReportType::REPORT_SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == SPI_FLASH_READ) {
+        if (report.report_type == SwitchControllerReport::InputReportType::REPORT_SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == SCMD_SPI_FLASH_READ) {
             handle_spi_flash_read(report.subcommand_reply.data);
             break;
         }
@@ -292,24 +292,24 @@ void SwitchController::handle_spi_flash_read(uint8_t *reply) {
     switch (addr) {
         case 0x5000: // Shipment data
             break;
-        case SERIAL_NO:
+        case SPI_SERIAL_NO:
             break;
-        case FACTORY_IMU_CALIBRATION:
+        case SPI_FACTORY_IMU_CALIBRATION:
             update_imu_calibration(data, size);
             break;
-        case FACTORY_STICK_CALIBRATION:
+        case SPI_FACTORY_STICK_CALIBRATION:
             update_stick_calibration(data, size);
             break;
-        case COLOR_DATA:
+        case SPI_COLOR_DATA:
             update_color_data(data, size);
             break;
         case 0x6086: // Stick device parameters 1
             break;
         case 0x6098: // Stick device parameters 2
             break;
-        case USER_IMU_CALIBRATION:
+        case SPI_USER_IMU_CALIBRATION:
             break;
-        case USER_STICK_CALIBRATION:
+        case SPI_USER_STICK_CALIBRATION:
             update_stick_calibration(data, size);
             break;
         default:
@@ -371,7 +371,7 @@ Vector2 SwitchController::get_stick(Stick stick) const {
     double x_raw, x_min, x_max;
     double y_raw, y_min, y_max;
     switch (stick) {
-        case LEFT:
+        case STICK_LEFT:
             x_raw = static_cast<double>(report.ls_x);
             y_raw = static_cast<double>(report.ls_y);
             x_min = static_cast<double>(ls_calib.x_min);
@@ -379,7 +379,7 @@ Vector2 SwitchController::get_stick(Stick stick) const {
             y_min = static_cast<double>(ls_calib.y_min);
             y_max = static_cast<double>(ls_calib.y_max);
             break;
-        case RIGHT:
+        case STICK_RIGHT:
             x_raw = static_cast<double>(report.rs_x);
             y_raw = static_cast<double>(report.rs_y);
             x_min = static_cast<double>(rs_calib.x_min);
@@ -446,7 +446,7 @@ void SwitchController::set_player_lights(PlayerLight p1, PlayerLight p2, PlayerL
     bzero(buf, 0x40);
     buf[0] = 1;
     buf[1] = packet_num++;
-    buf[10] = SET_PLAYER_LIGHTS;
+    buf[10] = SCMD_SET_PLAYER_LIGHTS;
 
     buf[11] = (p1) | (p2 << 1) | (p3 << 2) | (p4 << 3);
     hid_write(handle, buf, 0x40);

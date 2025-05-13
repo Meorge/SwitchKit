@@ -4,11 +4,11 @@
 namespace SwitchKit {
 enum BatteryLevel
 {
-    FULL = 8,
-    MEDIUM = 6,
-    LOW = 4,
-    CRITICAL = 2,
-    EMPTY = 0
+    BATTERY_FULL = 8,
+    BATTERY_MEDIUM = 6,
+    BATTERY_LOW = 4,
+    BATTERY_CRITICAL = 2,
+    BATTERY_EMPTY = 0
 };
 }
 #endif // BATTERY_LEVEL_H

@@ -32,46 +32,46 @@ uint8_t calc_crc8(uint8_t *data, uint8_t size);
 
 enum SubcommandType
 {
-	GET_ONLY_CONTROLLER_STATE = 0x00,
-	BT_MANUAL_PAIRING = 0x01,
-	REQUEST_DEVICE_INFO = 0x02,
-	SET_INPUT_REPORT_MODE = 0x03,
-	TRIGGER_BUTTONS_ELAPSED_TIME = 0x04,
-	GET_PAGE_LIST_STATE = 0x05,
-	SET_HCI_STATE = 0x06,
-	RESET_PAIRING_INFO = 0x07,
-	SET_SHIPMENT_LOW_POWER_STATE = 0x08,
-	SPI_FLASH_READ = 0x10,
-	SPI_FLASH_WRITE = 0x11,
-	SPI_SECTOR_ERASE = 0x12,
-	RESET_NFC_IR_MCU = 0x20,
-	SET_NFC_IR_MCU_CONFIG = 0x21,
-	SET_NFC_IR_MCU_STATE = 0x22,
-	SET_UNKNOWN_DATA = 0x24,
-	RESET_0x24_UNKNOWN_DATA = 0x25,
-	SET_UNKNOWN_NFC_IR_MCU_DATA = 0x28,
-	GET_0x28_NFC_IR_MCU_DATA = 0x29,
-	SET_GPIO_PIN_OUTPUT_2_PORT_2 = 0x2A,
-	GET_0x29_NFC_IR_MCU_DATA = 0x2B,
-	SET_PLAYER_LIGHTS = 0x30,
-	GET_PLAYER_LIGHTS = 0x31,
-	SET_HOME_LIGHT = 0x38,
-	ENABLE_IMU = 0x40,
-	SET_IMU_SENSITIVITY = 0x41,
-	WRITE_IMU_REGISTERS = 0x42,
-	READ_IMU_REGISTERS = 0x43,
-	ENABLE_VIBRATION = 0x48,
-	GET_REGULATED_VOLTAGE = 0x50,
-	SET_GPIO_PIN_OUTPUT_7_15_PORT_1 = 0x51,
-	GET_GPIO_PIN_IO_VALUE = 0x52,
-	GET_EXTERNAL_DEVICE_INFO = 0x59,
-	ENABLE_EXTERNAL_POLLING = 0x5A,
-	SET_EXTERNAL_FORMAT_CONFIG = 0x5C
+	SCMD_GET_ONLY_CONTROLLER_STATE = 0x00,
+	SCMD_BT_MANUAL_PAIRING = 0x01,
+	SCMD_REQUEST_DEVICE_INFO = 0x02,
+	SCMD_SET_INPUT_REPORT_MODE = 0x03,
+	SCMD_TRIGGER_BUTTONS_ELAPSED_TIME = 0x04,
+	SCMD_GET_PAGE_LIST_STATE = 0x05,
+	SCMD_SET_HCI_STATE = 0x06,
+	SCMD_RESET_PAIRING_INFO = 0x07,
+	SCMD_SET_SHIPMENT_LOW_POWER_STATE = 0x08,
+	SCMD_SPI_FLASH_READ = 0x10,
+	SCMD_SPI_FLASH_WRITE = 0x11,
+	SCMD_SPI_SECTOR_ERASE = 0x12,
+	SCMD_RESET_NFC_IR_MCU = 0x20,
+	SCMD_SET_NFC_IR_MCU_CONFIG = 0x21,
+	SCMD_SET_NFC_IR_MCU_STATE = 0x22,
+	SCMD_SET_UNKNOWN_DATA = 0x24,
+	SCMD_RESET_0x24_UNKNOWN_DATA = 0x25,
+	SCMD_SET_UNKNOWN_NFC_IR_MCU_DATA = 0x28,
+	SCMD_GET_0x28_NFC_IR_MCU_DATA = 0x29,
+	SCMD_SET_GPIO_PIN_OUTPUT_2_PORT_2 = 0x2A,
+	SCMD_GET_0x29_NFC_IR_MCU_DATA = 0x2B,
+	SCMD_SET_PLAYER_LIGHTS = 0x30,
+	SCMD_GET_PLAYER_LIGHTS = 0x31,
+	SCMD_SET_HOME_LIGHT = 0x38,
+	SCMD_ENABLE_IMU = 0x40,
+	SCMD_SET_IMU_SENSITIVITY = 0x41,
+	SCMD_WRITE_IMU_REGISTERS = 0x42,
+	SCMD_READ_IMU_REGISTERS = 0x43,
+	SCMD_ENABLE_VIBRATION = 0x48,
+	SCMD_GET_REGULATED_VOLTAGE = 0x50,
+	SCMD_SET_GPIO_PIN_OUTPUT_7_15_PORT_1 = 0x51,
+	SCMD_GET_GPIO_PIN_IO_VALUE = 0x52,
+	SCMD_GET_EXTERNAL_DEVICE_INFO = 0x59,
+	SCMD_ENABLE_EXTERNAL_POLLING = 0x5A,
+	SCMD_SET_EXTERNAL_FORMAT_CONFIG = 0x5C
 };
 
 struct Subcommand {
 protected:
-	static SubcommandType const type = GET_ONLY_CONTROLLER_STATE;
+	static SubcommandType const type = SCMD_GET_ONLY_CONTROLLER_STATE;
 
 	void init_build(uint8_t *buf, uint8_t packet_num) const {
 		bzero(buf, 0x40);
@@ -85,7 +85,7 @@ public:
 };
 
 struct SetInputModeSubcommand: Subcommand {
-	static SubcommandType const type = SET_INPUT_REPORT_MODE;
+	static SubcommandType const type = SCMD_SET_INPUT_REPORT_MODE;
 
 	uint8_t mode;
 
@@ -99,7 +99,7 @@ struct SetInputModeSubcommand: Subcommand {
 };
 
 struct SPIFlashReadSubcommand: Subcommand {
-    static SubcommandType const type = SPI_FLASH_READ;
+    static SubcommandType const type = SCMD_SPI_FLASH_READ;
 
     uint32_t address;
     uint8_t size;
@@ -115,7 +115,7 @@ struct SPIFlashReadSubcommand: Subcommand {
 };
 
 struct RequestDeviceInfoSubcommand: Subcommand {
-	static SubcommandType const type = REQUEST_DEVICE_INFO;
+	static SubcommandType const type = SCMD_REQUEST_DEVICE_INFO;
 
 	void build(uint8_t *buf, uint8_t packet_num) const {
 		bzero(buf, 0x40);
@@ -126,7 +126,7 @@ struct RequestDeviceInfoSubcommand: Subcommand {
 };
 
 struct SetIMUEnabledSubcommand: Subcommand {
-	static SubcommandType const type = ENABLE_IMU;
+	static SubcommandType const type = SCMD_ENABLE_IMU;
 
 	bool enabled = false;
 
@@ -140,7 +140,7 @@ struct SetIMUEnabledSubcommand: Subcommand {
 };
 
 struct SetMCUEnabledSubcommand: Subcommand {
-	static SubcommandType const type = SET_NFC_IR_MCU_STATE;
+	static SubcommandType const type = SCMD_SET_NFC_IR_MCU_STATE;
 
 	bool enabled = false;
 
@@ -154,7 +154,7 @@ struct SetMCUEnabledSubcommand: Subcommand {
 };
 
 struct ConfigureMCUSubcommand: Subcommand {
-	static SubcommandType const type = SET_NFC_IR_MCU_CONFIG;
+	static SubcommandType const type = SCMD_SET_NFC_IR_MCU_CONFIG;
 
 	uint8_t command;
 	uint8_t subcommand;
@@ -185,7 +185,7 @@ struct ConfigureMCUSubcommand: Subcommand {
 };
 
 struct GetExternalDeviceIDSubcommand: Subcommand {
-	static SubcommandType const type = GET_EXTERNAL_DEVICE_INFO;
+	static SubcommandType const type = SCMD_GET_EXTERNAL_DEVICE_INFO;
 
 	void build(uint8_t *buf, uint8_t packet_num) const {
 		bzero(buf, 0x40);
@@ -196,7 +196,7 @@ struct GetExternalDeviceIDSubcommand: Subcommand {
 };
 
 struct SetExternalFormatConfigSubcommand: Subcommand {
-	static SubcommandType const type = SET_EXTERNAL_FORMAT_CONFIG;
+	static SubcommandType const type = SCMD_SET_EXTERNAL_FORMAT_CONFIG;
 
 	uint8_t *data;
 	uint8_t size;
@@ -211,7 +211,7 @@ struct SetExternalFormatConfigSubcommand: Subcommand {
 };
 
 struct EnableExternalPollingSubcommand: Subcommand {
-	static SubcommandType const type = ENABLE_EXTERNAL_POLLING;
+	static SubcommandType const type = SCMD_ENABLE_EXTERNAL_POLLING;
 
 	uint8_t *data;
 	uint8_t size;

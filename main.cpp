@@ -35,8 +35,8 @@ int main(void)
 	controller.request_imu_calibration();
 	controller.request_color_data();
 
-	controller.set_player_lights(SwitchKit::SwitchController::ON, SwitchKit::SwitchController::OFF, SwitchKit::SwitchController::FLASH, SwitchKit::SwitchController::ON);
 	// controller.enable_ringcon();
+	controller.set_player_lights(SwitchKit::SwitchController::LIGHT_ON, SwitchKit::SwitchController::LIGHT_OFF, SwitchKit::SwitchController::LIGHT_FLASH, SwitchKit::SwitchController::LIGHT_ON);
 
 	SwitchKit::HDRumbleConfig rumble;
 	rumble.right.low.amplitude = 0.9;

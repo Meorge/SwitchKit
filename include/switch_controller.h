@@ -15,20 +15,20 @@
 
 namespace SwitchKit {
 enum SPIFlashReadAddress {
-    SERIAL_NO = 0x6000,
-    DEVICE_TYPE = 0x6012,
-    COLOR_INFO_EXISTS = 0x601B,
-    FACTORY_IMU_CALIBRATION = 0x6020,
-    FACTORY_STICK_CALIBRATION = 0x603D,
-    COLOR_DATA = 0x6050,
-    USER_STICK_CALIBRATION = 0x8010,
-    USER_IMU_CALIBRATION = 0x8026
+    SPI_SERIAL_NO = 0x6000,
+    SPI_DEVICE_TYPE = 0x6012,
+    SPI_COLOR_INFO_EXISTS = 0x601B,
+    SPI_FACTORY_IMU_CALIBRATION = 0x6020,
+    SPI_FACTORY_STICK_CALIBRATION = 0x603D,
+    SPI_COLOR_DATA = 0x6050,
+    SPI_USER_STICK_CALIBRATION = 0x8010,
+    SPI_USER_IMU_CALIBRATION = 0x8026
 };
 
 enum SwitchControllerType: uint8_t {
-    JOY_CON_L = 1,
-    JOY_CON_R = 2,
-    PRO_CONTROLLER = 3
+    CONTROLLER_L = 1,
+    CONTROLLER_R = 2,
+    CONTROLLER_PRO = 3
 };
 
 struct SwitchDeviceInfo {
@@ -67,8 +67,8 @@ public:
 
     enum Stick
     {
-        LEFT,
-        RIGHT
+        STICK_LEFT,
+        STICK_RIGHT
     };
     Vector2 get_stick(Stick stick) const;
 
@@ -95,9 +95,9 @@ public:
     void rumble(const HDRumbleConfig &p_config);
 
     enum PlayerLight {
-        OFF,
-        ON = 0x01,
-        FLASH = 0x10
+        LIGHT_OFF,
+        LIGHT_ON = 0x01,
+        LIGHT_FLASH = 0x10
     };
 
     void set_player_lights(PlayerLight p1, PlayerLight p2, PlayerLight p3, PlayerLight p4);

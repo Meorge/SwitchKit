@@ -14,7 +14,7 @@ enum InputReportMode {
     MODE_MCU_UPDATE_STATE_REPORT_UNK = 0x23,
     MODE_STANDARD = 0x30,
     MODE_NFC_IR = 0x31,
-    BASIC = 0x3F
+    MODE_BASIC = 0x3F
 };
 
 struct SwitchControllerReport
@@ -33,7 +33,7 @@ struct SwitchControllerReport
     char timer_value = 0;
 
     bool is_charging = false;
-    BatteryLevel battery_level = BatteryLevel::EMPTY;
+    BatteryLevel battery_level = BatteryLevel::BATTERY_EMPTY;
 
     bool btn_y = false;
     bool btn_x = false;
