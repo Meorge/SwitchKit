@@ -6,10 +6,10 @@
 namespace SwitchKit {
 
 // From https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/spi_flash_notes.md.
-int16_t uint16_to_int16(uint16_t a) {
+int16_t uint16_to_int16(uint16_t p_a) {
 	int16_t b;
-	char* aPointer = (char*)&a, *bPointer = (char*)&b;
-	memcpy(bPointer, aPointer, sizeof(a));
+	char* aPointer = (char*)&p_a, *bPointer = (char*)&b;
+	memcpy(bPointer, aPointer, sizeof(p_a));
 	return b;
 }
 

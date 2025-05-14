@@ -53,10 +53,10 @@ void SwitchController::request_device_info() {
     }
 }
 
-void SwitchController::set_input_report_mode(InputReportMode mode) {
+void SwitchController::set_input_report_mode(InputReportMode p_mode) {
     uint8_t buf[0x40];
     SetInputModeSubcommand cmd;
-    cmd.mode = mode;
+    cmd.mode = p_mode;
     cmd.build(buf, packet_num++);
     hid_write(handle, buf, 0x40); // TODO: Make write_to_hid work for different commands
 
@@ -70,10 +70,10 @@ void SwitchController::set_input_report_mode(InputReportMode mode) {
     }
 }
 
-void SwitchController::set_imu_enabled(bool enabled) {
+void SwitchController::set_imu_enabled(bool p_enabled) {
     uint8_t buf[0x40];
     SetIMUEnabledSubcommand cmd;
-    cmd.enabled = enabled;
+    cmd.enabled = p_enabled;
     cmd.build(buf, packet_num++);
     hid_write(handle, buf, 0x40);
 
@@ -87,10 +87,10 @@ void SwitchController::set_imu_enabled(bool enabled) {
     }
 }
 
-void SwitchController::set_mcu_enabled(bool enabled) {
+void SwitchController::set_mcu_enabled(bool p_enabled) {
     uint8_t buf[0x40];
     SetMCUEnabledSubcommand cmd;
-    cmd.enabled = enabled;
+    cmd.enabled = p_enabled;
     cmd.build(buf, packet_num++);
     hid_write(handle, buf, 0x40);
 
@@ -117,12 +117,12 @@ void SwitchController::rumble(const HDRumbleConfig &p_config) {
     hid_write(handle, buf, 0x40);
 }
 
-void SwitchController::configure_mcu(uint8_t command, uint8_t subcommand, uint8_t mode) {
+void SwitchController::configure_mcu(uint8_t p_command, uint8_t p_subcommand, uint8_t p_mode) {
     uint8_t buf[0x40];
     ConfigureMCUSubcommand cmd;
-    cmd.command = command;
-    cmd.subcommand = subcommand;
-    cmd.mode = mode;
+    cmd.command = p_command;
+    cmd.subcommand = p_subcommand;
+    cmd.mode = p_mode;
     cmd.build(buf, packet_num++);
     hid_write(handle, buf, 0x40);
 
@@ -152,11 +152,11 @@ SwitchController::ExternalDevice SwitchController::get_external_device_id() {
     }
 }
 
-void SwitchController::set_external_format_config(uint8_t *data, uint8_t size) {
+void SwitchController::set_external_format_config(uint8_t *p_data, uint8_t p_size) {
     uint8_t buf[0x40];
     SetExternalFormatConfigSubcommand cmd;
-    cmd.data = data;
-    cmd.size = size;
+    cmd.data = p_data;
+    cmd.size = p_size;
     cmd.build(buf, packet_num++);
     hid_write(handle, buf, 0x40);
 
@@ -170,11 +170,11 @@ void SwitchController::set_external_format_config(uint8_t *data, uint8_t size) {
     }
 }
 
-void SwitchController::enable_external_polling(uint8_t *data, uint8_t size) {
+void SwitchController::enable_external_polling(uint8_t *p_data, uint8_t p_size) {
     uint8_t buf[0x40];
     EnableExternalPollingSubcommand cmd;
-    cmd.data = data;
-    cmd.size = size;
+    cmd.data = p_data;
+    cmd.size = p_size;
     cmd.build(buf, packet_num++);
     hid_write(handle, buf, 0x40);
 
@@ -353,25 +353,25 @@ void SwitchController::request_color_data() {
     }
 }
 
-void SwitchController::write_to_hid(SPIFlashReadSubcommand cmd) {
+void SwitchController::write_to_hid(SPIFlashReadSubcommand p_cmd) {
     uint8_t buf[0x40];
-    cmd.build(buf, packet_num++);
+    p_cmd.build(buf, packet_num++);
     hid_write(handle, buf, 0x40);
 }
 
-void SwitchController::handle_request_device_info(uint8_t *data) {
-    memcpy(&info, (SwitchDeviceInfo*)data, sizeof(SwitchDeviceInfo));
+void SwitchController::handle_request_device_info(uint8_t *p_data) {
+    memcpy(&info, (SwitchDeviceInfo*)p_data, sizeof(SwitchDeviceInfo));
 }
 
-void SwitchController::handle_spi_flash_read(uint8_t *reply) {
+void SwitchController::handle_spi_flash_read(uint8_t *p_reply) {
 	uint32_t addr;
 	uint8_t size;
 
-	memcpy(&addr, reply, sizeof(uint32_t));
-	memcpy(&size, reply + sizeof(uint32_t), sizeof(uint8_t));
+	memcpy(&addr, p_reply, sizeof(uint32_t));
+	memcpy(&size, p_reply + sizeof(uint32_t), sizeof(uint8_t));
 
 	uint8_t data[size];
-	memcpy(data, reply + sizeof(uint32_t) + sizeof(uint8_t), size);
+	memcpy(data, p_reply + sizeof(uint32_t) + sizeof(uint8_t), size);
     
     switch (addr) {
         case 0x5000: // Shipment data
@@ -439,10 +439,10 @@ void SwitchController::parse_stick_calibration(uint8_t *p_raw_data, StickCalibra
     }
 }
 
-void SwitchController::update_factory_stick_calibration(uint8_t *p_raw_data, uint8_t size) {
+void SwitchController::update_factory_stick_calibration(uint8_t *p_raw_data, uint8_t p_size) {
 	// https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/spi_flash_notes.md#analog-stick-factory-and-user-calibration
-    if (size != 0x12) {
-        printf("Size of data for stick calibration is %d but it should be %d\n", size, 0x12);
+    if (p_size != 0x12) {
+        printf("Size of data for stick calibration is %d but it should be %d\n", p_size, 0x12);
         return;
     }
 
@@ -454,12 +454,12 @@ void SwitchController::parse_imu_calibration(uint8_t *p_raw_data, IMUCalibration
     memcpy(&p_dest, p_raw_data, sizeof(IMUCalibrationData));
 }
 
-Vector2 SwitchController::get_stick(Stick stick) const {
+Vector2 SwitchController::get_stick(Stick p_stick) const {
     double x_raw, x_min, x_max;
     double y_raw, y_min, y_max;
 
     const StickCalibrationData *calib;
-    switch (stick) {
+    switch (p_stick) {
         case STICK_LEFT:
             calib = has_user_ls_calib ? &user_ls_calib : &ls_calib;
             x_raw = static_cast<double>(report.ls_x);
@@ -511,16 +511,16 @@ Vector3 SwitchController::get_gyro() const {
     return val;
 }
 
-void SwitchController::update_color_data(uint8_t *data, uint8_t size) {
-    if (size != 0x0C) {
-        printf("Color data size was 0x%X but should have been 0x0B\n", size);
+void SwitchController::update_color_data(uint8_t *p_data, uint8_t p_size) {
+    if (p_size != 0x0C) {
+        printf("Color data size was 0x%X but should have been 0x0B\n", p_size);
         return;
     }
-    memcpy(&colors, (SwitchControllerColors*)data, sizeof(SwitchControllerColors));
+    memcpy(&colors, (SwitchControllerColors*)p_data, sizeof(SwitchControllerColors));
 }
 
-Color24 SwitchController::get_color(ColorRole role) const {
-    switch (role) {
+Color24 SwitchController::get_color(ColorRole p_role) const {
+    switch (p_role) {
         case COLOR_BODY:
             return colors.body_color;
         case COLOR_BUTTON:
@@ -532,14 +532,14 @@ Color24 SwitchController::get_color(ColorRole role) const {
     }
 }
 
-void SwitchController::set_player_lights(PlayerLight p1, PlayerLight p2, PlayerLight p3, PlayerLight p4) {
+void SwitchController::set_player_lights(PlayerLight p_p1, PlayerLight p_p2, PlayerLight p_p3, PlayerLight p_p4) {
     uint8_t buf[0x40];
     bzero(buf, 0x40);
     buf[0] = 1;
     buf[1] = packet_num++;
     buf[10] = SCMD_SET_PLAYER_LIGHTS;
 
-    buf[11] = (p1) | (p2 << 1) | (p3 << 2) | (p4 << 3);
+    buf[11] = (p_p1) | (p_p2 << 1) | (p_p3 << 2) | (p_p4 << 3);
     hid_write(handle, buf, 0x40);
 }
 }

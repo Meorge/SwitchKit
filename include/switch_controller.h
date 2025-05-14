@@ -76,25 +76,25 @@ public:
     bool get_battery_charging() const { return report.is_charging; }
     SwitchControllerType get_controller_type() const { return info.type; }
 
-    bool get_button_pressed_this_frame(SwitchControllerReport::Button button) {
-        return report.get_button(button) && !prev_report.get_button(button);
+    bool get_button_pressed_this_frame(SwitchControllerReport::Button p_button) {
+        return report.get_button(p_button) && !prev_report.get_button(p_button);
     }
-    bool get_button(SwitchControllerReport::Button button) { return report.get_button(button); }
+    bool get_button(SwitchControllerReport::Button p_button) { return report.get_button(p_button); }
 
     enum Stick
     {
         STICK_LEFT,
         STICK_RIGHT
     };
-    Vector2 get_stick(Stick stick) const;
+    Vector2 get_stick(Stick p_stick) const;
 
     Vector3 get_accel() const;
     Vector3 get_gyro() const;
 
-    void set_input_report_mode(InputReportMode mode);
-    void set_imu_enabled(bool enabled);
-    void set_mcu_enabled(bool enabled);
-    void configure_mcu(uint8_t command, uint8_t subcommand, uint8_t mode);
+    void set_input_report_mode(InputReportMode p_mode);
+    void set_imu_enabled(bool p_enabled);
+    void set_mcu_enabled(bool p_enabled);
+    void configure_mcu(uint8_t p_command, uint8_t p_subcommand, uint8_t p_mode);
 
     enum ExternalDevice {
         EXT_NONE = 0x0,
@@ -102,8 +102,8 @@ public:
         EXT_STARLINK = 0x2800
     };
     ExternalDevice get_external_device_id();
-    void set_external_format_config(uint8_t *data, uint8_t size);
-    void enable_external_polling(uint8_t *data, uint8_t size);
+    void set_external_format_config(uint8_t *p_data, uint8_t p_size);
+    void enable_external_polling(uint8_t *p_data, uint8_t p_size);
 
     void enable_ringcon();
     void disable_ringcon();
@@ -125,7 +125,7 @@ public:
         LIGHT_FLASH = 0x10
     };
 
-    void set_player_lights(PlayerLight p1, PlayerLight p2, PlayerLight p3, PlayerLight p4);
+    void set_player_lights(PlayerLight p_p1, PlayerLight p_p2, PlayerLight p_p3, PlayerLight p_p4);
 
     enum ColorRole {
         COLOR_BODY,
@@ -133,9 +133,9 @@ public:
         COLOR_LEFT_GRIP,
         COLOR_RIGHT_GRIP
     };
-    Color24 get_color(ColorRole role) const;
+    Color24 get_color(ColorRole p_role) const;
 
-    void write_to_hid(SPIFlashReadSubcommand cmd);
+    void write_to_hid(SPIFlashReadSubcommand p_cmd);
 
     
 
@@ -143,12 +143,12 @@ public:
     ~SwitchController();
 
 private:
-    void handle_request_device_info(uint8_t *data);
-    void handle_spi_flash_read(uint8_t *reply);
-    void update_factory_stick_calibration(uint8_t *stick_cal, uint8_t size);
+    void handle_request_device_info(uint8_t *p_data);
+    void handle_spi_flash_read(uint8_t *p_reply);
+    void update_factory_stick_calibration(uint8_t *p_stick_cal, uint8_t p_size);
     void parse_stick_calibration(uint8_t *p_raw_data, StickCalibrationData *p_dest, Stick p_stick);
     void parse_imu_calibration(uint8_t *p_raw_data, IMUCalibrationData *p_dest);
-    void update_color_data(uint8_t *data, uint8_t size);
+    void update_color_data(uint8_t *p_data, uint8_t p_size);
 };
 }
 

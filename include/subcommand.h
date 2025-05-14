@@ -73,11 +73,11 @@ struct Subcommand {
 protected:
 	static SubcommandType const type = SCMD_GET_ONLY_CONTROLLER_STATE;
 
-	void init_build(uint8_t *buf, uint8_t packet_num) const {
-		bzero(buf, 0x40);
-		buf[0] = 1;
-		buf[1] = packet_num;
-		buf[10] = type;
+	void init_build(uint8_t *p_buf, uint8_t p_packet_num) const {
+		bzero(p_buf, 0x40);
+		p_buf[0] = 1;
+		p_buf[1] = p_packet_num;
+		p_buf[10] = type;
 	}
 
 public:
@@ -89,12 +89,12 @@ struct SetInputModeSubcommand: Subcommand {
 
 	uint8_t mode;
 
-	void build(uint8_t *buf, uint8_t packet_num) const {
-		bzero(buf, 0x40);
-		buf[0] = 1;
-		buf[1] = packet_num;
-		buf[10] = type;
-		buf[11] = mode;
+	void build(uint8_t *p_buf, uint8_t p_packet_num) const {
+		bzero(p_buf, 0x40);
+		p_buf[0] = 1;
+		p_buf[1] = p_packet_num;
+		p_buf[10] = type;
+		p_buf[11] = mode;
 	}
 };
 
@@ -104,24 +104,24 @@ struct SPIFlashReadSubcommand: Subcommand {
     uint32_t address;
     uint8_t size;
 
-   	void build(uint8_t *buf, uint8_t packet_num) const {
-		bzero(buf, 0x40);
-		buf[0] = 1;
-		buf[1] = packet_num;
-		buf[10] = type;
-        memcpy(buf + 11, &address, sizeof(uint32_t));
-        memcpy(buf + 11 + sizeof(uint32_t), &size, sizeof(uint8_t));
+   	void build(uint8_t *p_buf, uint8_t p_packet_num) const {
+		bzero(p_buf, 0x40);
+		p_buf[0] = 1;
+		p_buf[1] = p_packet_num;
+		p_buf[10] = type;
+        memcpy(p_buf + 11, &address, sizeof(uint32_t));
+        memcpy(p_buf + 11 + sizeof(uint32_t), &size, sizeof(uint8_t));
     }
 };
 
 struct RequestDeviceInfoSubcommand: Subcommand {
 	static SubcommandType const type = SCMD_REQUEST_DEVICE_INFO;
 
-	void build(uint8_t *buf, uint8_t packet_num) const {
-		bzero(buf, 0x40);
-		buf[0] = 1;
-		buf[1] = packet_num;
-		buf[10] = type;
+	void build(uint8_t *p_buf, uint8_t p_packet_num) const {
+		bzero(p_buf, 0x40);
+		p_buf[0] = 1;
+		p_buf[1] = p_packet_num;
+		p_buf[10] = type;
 	}
 };
 
@@ -130,12 +130,12 @@ struct SetIMUEnabledSubcommand: Subcommand {
 
 	bool enabled = false;
 
-	void build(uint8_t *buf, uint8_t packet_num) const {
-		bzero(buf, 0x40);
-		buf[0] = 1;
-		buf[1] = packet_num;
-		buf[10] = type;
-		buf[11] = enabled ? 0x01 : 0x00;
+	void build(uint8_t *p_buf, uint8_t p_packet_num) const {
+		bzero(p_buf, 0x40);
+		p_buf[0] = 1;
+		p_buf[1] = p_packet_num;
+		p_buf[10] = type;
+		p_buf[11] = enabled ? 0x01 : 0x00;
 	}
 };
 
@@ -144,12 +144,12 @@ struct SetMCUEnabledSubcommand: Subcommand {
 
 	bool enabled = false;
 
-	void build(uint8_t *buf, uint8_t packet_num) const {
-		bzero(buf, 0x40);
-		buf[0] = 1;
-		buf[1] = packet_num;
-		buf[10] = type;
-		buf[11] = enabled ? 0x01 : 0x00;
+	void build(uint8_t *p_buf, uint8_t p_packet_num) const {
+		bzero(p_buf, 0x40);
+		p_buf[0] = 1;
+		p_buf[1] = p_packet_num;
+		p_buf[10] = type;
+		p_buf[11] = enabled ? 0x01 : 0x00;
 	}
 };
 
@@ -160,11 +160,11 @@ struct ConfigureMCUSubcommand: Subcommand {
 	uint8_t subcommand;
 	uint8_t mode;
 
-	void build(uint8_t *buf, uint8_t packet_num) const {
-		bzero(buf, 0x40);
-		buf[0] = 1;
-		buf[1] = packet_num;
-		buf[10] = type;
+	void build(uint8_t *p_buf, uint8_t p_packet_num) const {
+		bzero(p_buf, 0x40);
+		p_buf[0] = 1;
+		p_buf[1] = p_packet_num;
+		p_buf[10] = type;
 
 		uint8_t subcommand_data[38];
 		bzero(subcommand_data, 38);
@@ -180,18 +180,18 @@ struct ConfigureMCUSubcommand: Subcommand {
 		}
 
 		subcommand_data[37] = crc;
-		memcpy(buf + 11, subcommand_data, sizeof(subcommand_data));
+		memcpy(p_buf + 11, subcommand_data, sizeof(subcommand_data));
 	}
 };
 
 struct GetExternalDeviceIDSubcommand: Subcommand {
 	static SubcommandType const type = SCMD_GET_EXTERNAL_DEVICE_INFO;
 
-	void build(uint8_t *buf, uint8_t packet_num) const {
-		bzero(buf, 0x40);
-		buf[0] = 1;
-		buf[1] = packet_num;
-		buf[10] = type;
+	void build(uint8_t *p_buf, uint8_t p_packet_num) const {
+		bzero(p_buf, 0x40);
+		p_buf[0] = 1;
+		p_buf[1] = p_packet_num;
+		p_buf[10] = type;
 	}
 };
 
@@ -201,12 +201,12 @@ struct SetExternalFormatConfigSubcommand: Subcommand {
 	uint8_t *data;
 	uint8_t size;
 	
-	void build(uint8_t *buf, uint8_t packet_num) const {
-		bzero(buf, 0x40);
-		buf[0] = 1;
-		buf[1] = packet_num;
-		buf[10] = type;
-		memcpy(buf + 11, data, size);
+	void build(uint8_t *p_buf, uint8_t p_packet_num) const {
+		bzero(p_buf, 0x40);
+		p_buf[0] = 1;
+		p_buf[1] = p_packet_num;
+		p_buf[10] = type;
+		memcpy(p_buf + 11, data, size);
 	}
 };
 
@@ -216,12 +216,12 @@ struct EnableExternalPollingSubcommand: Subcommand {
 	uint8_t *data;
 	uint8_t size;
 
-	void build(uint8_t *buf, uint8_t packet_num) const {
-		bzero(buf, 0x40);
-		buf[0] = 1;
-		buf[1] = packet_num;
-		buf[10] = type;
-		memcpy(buf + 11, data, size);
+	void build(uint8_t *p_buf, uint8_t p_packet_num) const {
+		bzero(p_buf, 0x40);
+		p_buf[0] = 1;
+		p_buf[1] = p_packet_num;
+		p_buf[10] = type;
+		memcpy(p_buf + 11, data, size);
 	}
 };
 

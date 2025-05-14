@@ -89,7 +89,7 @@ struct SwitchControllerReport
     NFCIRReport nfc_ir_report; // x31
     
     SwitchControllerReport() {}
-    SwitchControllerReport(unsigned char *buf);
+    SwitchControllerReport(unsigned char *p_buf);
 
 public:
     enum Button {
@@ -118,7 +118,7 @@ public:
         BTN_L,
         BTN_ZL
     };
-    bool get_button(Button button);
+    bool get_button(Button p_button);
 };
 }
 
