@@ -63,6 +63,8 @@ struct SwitchControllerReport
     bool btn_l = false;
     bool btn_zl = false;
 
+    bool btn_ringcon_flex = false;
+
     uint16_t ls_x = 0;
     uint16_t ls_y = 0;
 
@@ -116,7 +118,9 @@ public:
         BTN_RIGHT,
         BTN_LEFT,
         BTN_L,
-        BTN_ZL
+        BTN_ZL,
+
+        BTN_RINGCON_FLEX
     };
     bool get_button(Button p_button);
 };

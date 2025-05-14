@@ -41,6 +41,13 @@ void SwitchController::poll() {
     val *= delta_time;
     val *= (M_PI / 180.0); // Convert from degrees to radians.
     accumulated_gyro += val; // Add to accumulated value.
+
+    if (get_ringcon_enabled()) {
+        double flex = get_ringcon_flex();
+        report.btn_ringcon_flex = flex > btn_ringcon_flex_threshold;
+    } else {
+        report.btn_ringcon_flex = false;
+    }
 }
 
 void SwitchController::request_device_info() {

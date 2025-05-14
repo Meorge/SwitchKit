@@ -93,6 +93,8 @@ bool SwitchControllerReport::get_button(Button p_button) {
         case BTN_LEFT: return btn_left;
         case BTN_L: return btn_l;
         case BTN_ZL: return btn_zl;
+
+        case BTN_RINGCON_FLEX: return btn_ringcon_flex;
     }
 }
 }

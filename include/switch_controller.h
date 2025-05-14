@@ -73,6 +73,11 @@ class SwitchController
 
     bool ringcon_enabled = false;
 
+    // Ring-Con button press
+    // This makes it easy to detect a Ring-Con press as a button for GUIs.
+    // When the Ring-Con's flex value is past the threshold, the button is considered "pressed".
+    double btn_ringcon_flex_threshold = 0.4;
+
 public:
     BatteryLevel get_battery_level() const { return report.battery_level; }
     bool get_battery_charging() const { return report.is_charging; }
