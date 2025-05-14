@@ -511,7 +511,8 @@ Vector3 SwitchController::get_accel() const {
 }
 
 Vector3 SwitchController::get_gyro() const {
-    Vector3 val = report.imu_packets[0].get_gyro(imu_calib);
+    const IMUCalibrationData *calib = has_user_imu_calib ? &user_imu_calib : &imu_calib;
+    Vector3 val = report.imu_packets[0].get_gyro(calib);
     double delta_time = 0.005; // 5ms
     val.x *= delta_time;
     val.y *= delta_time;

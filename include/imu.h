@@ -38,7 +38,7 @@ struct IMUPacket {
     int16_t gyro_3;
 
     Vector3 get_accel() const;
-    Vector3 get_gyro(const IMUCalibrationData &p_calib) const;
+    Vector3 get_gyro(const IMUCalibrationData *p_calib) const;
 };
 }
 
