@@ -92,6 +92,14 @@ public:
     Vector3 get_gyro() const;
 
     void set_input_report_mode(InputReportMode p_mode);
+
+    enum HCIState: uint8_t {
+        HCI_OFF = 0x00,
+        HCI_RECONNECT = 0x01,
+        HCI_PAIR = 0x02,
+        HCI_RECONNECT_2 = 0x04
+    };
+    void set_hci_state(HCIState p_state);
     void set_imu_enabled(bool p_enabled);
     void set_mcu_enabled(bool p_enabled);
     void configure_mcu(uint8_t p_command, uint8_t p_subcommand, uint8_t p_mode);

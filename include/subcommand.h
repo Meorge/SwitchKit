@@ -98,6 +98,20 @@ struct SetInputModeSubcommand: Subcommand {
 	}
 };
 
+struct SetHCIStateSubcommand: Subcommand {
+	static SubcommandType const type = SCMD_SET_HCI_STATE;
+
+	uint8_t mode;
+
+	void build(uint8_t *p_buf, uint8_t p_packet_num) const {
+		bzero(p_buf, 0x40);
+		p_buf[0] = 1;
+		p_buf[1] = p_packet_num;
+		p_buf[10] = type;
+		p_buf[11] = mode;
+	}
+};
+
 struct SPIFlashReadSubcommand: Subcommand {
     static SubcommandType const type = SCMD_SPI_FLASH_READ;
 

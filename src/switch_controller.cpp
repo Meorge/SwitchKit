@@ -70,6 +70,14 @@ void SwitchController::set_input_report_mode(InputReportMode p_mode) {
     }
 }
 
+void SwitchController::set_hci_state(HCIState p_state) {
+    uint8_t buf[0x40];
+    SetHCIStateSubcommand cmd;
+    cmd.mode = p_state;
+    cmd.build(buf, packet_num++);
+    hid_write(handle, buf, 0x40);
+}
+
 void SwitchController::set_imu_enabled(bool p_enabled) {
     uint8_t buf[0x40];
     SetIMUEnabledSubcommand cmd;
