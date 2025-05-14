@@ -232,9 +232,10 @@ double SwitchController::get_ringcon_flex() {
 }
 
 void SwitchController::request_stick_calibration() {
+    // Factory calibration
 	SPIFlashReadSubcommand cmd;
 	cmd.address = SPI_FACTORY_STICK_CALIBRATION;
-	cmd.size = 0x12;
+	cmd.size = 18;
     write_to_hid(cmd);
 
     while (true) {
@@ -243,6 +244,44 @@ void SwitchController::request_stick_calibration() {
         report = SwitchControllerReport(in_buf);
         if (report.report_type == SwitchControllerReport::InputReportType::REPORT_SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == SCMD_SPI_FLASH_READ) {
             handle_spi_flash_read(report.subcommand_reply.data);
+            break;
+        }
+    }
+
+    // User calibration
+    cmd.address = 0x8010; // Start of stick calibration
+    cmd.size = 22;
+    write_to_hid(cmd); 
+
+    while (true) {
+        uint8_t in_buf[361];
+        bzero(in_buf, 361);
+        hid_read(handle, in_buf, 361);
+        report = SwitchControllerReport(in_buf);
+        if (report.report_type == SwitchControllerReport::InputReportType::REPORT_SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == SCMD_SPI_FLASH_READ) {
+            uint32_t addr;
+            uint8_t size;
+
+            memcpy(&addr, report.subcommand_reply.data, sizeof(uint32_t));
+            memcpy(&size, report.subcommand_reply.data + sizeof(uint32_t), sizeof(uint8_t));
+
+            uint8_t data[size];
+            memcpy(data, report.subcommand_reply.data + sizeof(uint32_t) + sizeof(uint8_t), size);
+
+            uint16_t ls_magic = *((uint16_t*)data);
+            uint16_t rs_magic = *((uint16_t*)(data + sizeof(uint16_t) + 9));
+
+            if (ls_magic == 0xA1B2) {
+                // Read left stick calibration, save
+                has_user_ls_calib = true;
+                parse_stick_calibration(data + sizeof(uint16_t), &user_ls_calib, STICK_LEFT);
+            }
+
+            if (rs_magic == 0xA2B2) {
+                // Read right stick calibration, save
+                has_user_rs_calib = true;
+                parse_stick_calibration(data + sizeof(uint16_t) + 9 + sizeof(uint16_t), &user_rs_calib, STICK_RIGHT);
+            }
             break;
         }
     }
@@ -311,7 +350,7 @@ void SwitchController::handle_spi_flash_read(uint8_t *reply) {
             update_imu_calibration(data, size);
             break;
         case SPI_FACTORY_STICK_CALIBRATION:
-            update_stick_calibration(data, size);
+            update_factory_stick_calibration(data, size);
             break;
         case SPI_COLOR_DATA:
             update_color_data(data, size);
@@ -323,7 +362,6 @@ void SwitchController::handle_spi_flash_read(uint8_t *reply) {
         case SPI_USER_IMU_CALIBRATION:
             break;
         case SPI_USER_STICK_CALIBRATION:
-            update_stick_calibration(data, size);
             break;
         default:
             break;
@@ -331,50 +369,54 @@ void SwitchController::handle_spi_flash_read(uint8_t *reply) {
     }
 }
 
-void SwitchController::update_stick_calibration(uint8_t *stick_cal, uint8_t size) {
+void SwitchController::parse_stick_calibration(uint8_t *p_raw_data, StickCalibrationData *p_dest, Stick p_stick) {
+    uint16_t parsed_data[6];
+    switch (p_stick) {
+        case STICK_LEFT: {
+            parsed_data[0] = (p_raw_data[1] << 8) & 0xF00 | p_raw_data[0];    // X axis max above center
+            parsed_data[1] = (p_raw_data[2] << 4) | (p_raw_data[1] >> 4);     // Y axis max above center
+            parsed_data[2] = (p_raw_data[4] << 8) & 0xF00 | p_raw_data[3];    // X axis center
+            parsed_data[3] = (p_raw_data[5] << 4) | (p_raw_data[4] >> 4);     // Y axis center
+            parsed_data[4] = (p_raw_data[7] << 8) & 0xF00 | p_raw_data[6];    // X axis min below center
+            parsed_data[5] = (p_raw_data[8] << 4) | (p_raw_data[7] >> 4);     // Y axis min below center
+
+            p_dest->x_min = parsed_data[2] - parsed_data[4];
+            p_dest->x_center = parsed_data[2];
+            p_dest->x_max = parsed_data[2] + parsed_data[0];
+
+            p_dest->y_min = parsed_data[3] - parsed_data[5];
+            p_dest->y_center = parsed_data[3];
+            p_dest->y_max = parsed_data[3] + parsed_data[1];
+        }
+        case STICK_RIGHT: {
+            parsed_data[0] = (p_raw_data[1] << 8) & 0xF00 | p_raw_data[0];    // X axis center
+            parsed_data[1] = (p_raw_data[2] << 4) | (p_raw_data[1] >> 4);     // Y axis center
+            parsed_data[2] = (p_raw_data[4] << 8) & 0xF00 | p_raw_data[3];    // X axis min below center
+            parsed_data[3] = (p_raw_data[5] << 4) | (p_raw_data[4] >> 4);     // Y axis min below center
+            parsed_data[4] = (p_raw_data[7] << 8) & 0xF00 | p_raw_data[6];    // X axis max above center
+            parsed_data[5] = (p_raw_data[8] << 4) | (p_raw_data[7] >> 4);     // Y axis max above center
+
+            p_dest->x_min = parsed_data[0] - parsed_data[2];
+            p_dest->x_center = parsed_data[0];
+            p_dest->x_max = parsed_data[0] + parsed_data[4];
+
+            p_dest->y_min = parsed_data[1] - parsed_data[3];
+            p_dest->y_center = parsed_data[1];
+            p_dest->y_max = parsed_data[1] + parsed_data[5];
+        }
+    }
+}
+
+void SwitchController::update_factory_stick_calibration(uint8_t *p_raw_data, uint8_t size) {
 	// https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/spi_flash_notes.md#analog-stick-factory-and-user-calibration
     if (size != 0x12) {
         printf("Size of data for stick calibration is %d but it should be %d\n", size, 0x12);
         return;
     }
 
-    uint8_t *ls_stick_cal = stick_cal;
-    uint16_t ls_data[6];
-    ls_data[0] = (ls_stick_cal[1] << 8) & 0xF00 | ls_stick_cal[0];    // X axis max above center
-    ls_data[1] = (ls_stick_cal[2] << 4) | (ls_stick_cal[1] >> 4);     // Y axis max above center
-    ls_data[2] = (ls_stick_cal[4] << 8) & 0xF00 | ls_stick_cal[3];    // X axis center
-    ls_data[3] = (ls_stick_cal[5] << 4) | (ls_stick_cal[4] >> 4);     // Y axis center
-    ls_data[4] = (ls_stick_cal[7] << 8) & 0xF00 | ls_stick_cal[6];    // X axis min below center
-    ls_data[5] = (ls_stick_cal[8] << 4) | (ls_stick_cal[7] >> 4);     // Y axis min below center
-
-    ls_calib.x_min = ls_data[2] - ls_data[4];
-    ls_calib.x_center = ls_data[2];
-    ls_calib.x_max = ls_data[2] + ls_data[0];
-
-    ls_calib.y_min = ls_data[3] - ls_data[5];
-    ls_calib.y_center = ls_data[3];
-    ls_calib.y_max = ls_data[3] + ls_data[1];
-
-
-    uint8_t *rs_stick_cal = stick_cal + 9;
-    uint16_t rs_data[6];
-    rs_data[0] = (rs_stick_cal[1] << 8) & 0xF00 | rs_stick_cal[0];    // X axis center
-    rs_data[1] = (rs_stick_cal[2] << 4) | (rs_stick_cal[1] >> 4);     // Y axis center
-    rs_data[2] = (rs_stick_cal[4] << 8) & 0xF00 | rs_stick_cal[3];    // X axis min below center
-    rs_data[3] = (rs_stick_cal[5] << 4) | (rs_stick_cal[4] >> 4);     // Y axis min below center
-    rs_data[4] = (rs_stick_cal[7] << 8) & 0xF00 | rs_stick_cal[6];    // X axis max above center
-    rs_data[5] = (rs_stick_cal[8] << 4) | (rs_stick_cal[7] >> 4);     // Y axis max above center
-
-    rs_calib.x_min = rs_data[0] - rs_data[2];
-    rs_calib.x_center = rs_data[0];
-    rs_calib.x_max = rs_data[0] + rs_data[4];
-
-    rs_calib.y_min = rs_data[1] - rs_data[3];
-    rs_calib.y_center = rs_data[1];
-    rs_calib.y_max = rs_data[1] + rs_data[5];
+    parse_stick_calibration(p_raw_data, &ls_calib, STICK_LEFT);
+    parse_stick_calibration(p_raw_data + 9, &rs_calib, STICK_RIGHT);
 }
-
-
 
 void SwitchController::update_imu_calibration(uint8_t *data, uint8_t size) {
     memcpy(&imu_calib, data, size);
@@ -383,22 +425,26 @@ void SwitchController::update_imu_calibration(uint8_t *data, uint8_t size) {
 Vector2 SwitchController::get_stick(Stick stick) const {
     double x_raw, x_min, x_max;
     double y_raw, y_min, y_max;
+
+    const StickCalibrationData *calib;
     switch (stick) {
         case STICK_LEFT:
+            calib = has_user_ls_calib ? &user_ls_calib : &ls_calib;
             x_raw = static_cast<double>(report.ls_x);
             y_raw = static_cast<double>(report.ls_y);
-            x_min = static_cast<double>(ls_calib.x_min);
-            x_max = static_cast<double>(ls_calib.x_max);
-            y_min = static_cast<double>(ls_calib.y_min);
-            y_max = static_cast<double>(ls_calib.y_max);
+            x_min = static_cast<double>(calib->x_min);
+            x_max = static_cast<double>(calib->x_max);
+            y_min = static_cast<double>(calib->y_min);
+            y_max = static_cast<double>(calib->y_max);
             break;
         case STICK_RIGHT:
+            calib = has_user_rs_calib ? &user_rs_calib : &rs_calib;
             x_raw = static_cast<double>(report.rs_x);
             y_raw = static_cast<double>(report.rs_y);
             x_min = static_cast<double>(rs_calib.x_min);
-            x_max = static_cast<double>(rs_calib.x_max);
-            y_min = static_cast<double>(rs_calib.y_min);
-            y_max = static_cast<double>(rs_calib.y_max);
+            x_max = static_cast<double>(calib->x_max);
+            y_min = static_cast<double>(calib->y_min);
+            y_max = static_cast<double>(calib->y_max);
             break;
     }
 

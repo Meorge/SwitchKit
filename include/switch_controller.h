@@ -47,6 +47,12 @@ class SwitchController
     hid_device *handle;
     StickCalibrationData ls_calib;
     StickCalibrationData rs_calib;
+
+    bool has_user_ls_calib = false;
+    StickCalibrationData user_ls_calib;
+    bool has_user_rs_calib = false;
+    StickCalibrationData user_rs_calib;
+
     IMUCalibrationData imu_calib;
     Vector3 gyro_cal_coeff = Vector3(0,0,0);
     uint8_t buf[361];
@@ -135,7 +141,8 @@ public:
 private:
     void handle_request_device_info(uint8_t *data);
     void handle_spi_flash_read(uint8_t *reply);
-    void update_stick_calibration(uint8_t *stick_cal, uint8_t size);
+    void update_factory_stick_calibration(uint8_t *stick_cal, uint8_t size);
+    void parse_stick_calibration(uint8_t *p_raw_data, StickCalibrationData *p_dest, Stick p_stick);
     void update_imu_calibration(uint8_t *imu_cal, uint8_t size);
     void update_color_data(uint8_t *data, uint8_t size);
 };
