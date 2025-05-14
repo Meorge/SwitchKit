@@ -288,6 +288,7 @@ void SwitchController::request_stick_calibration() {
 }
 
 void SwitchController::request_imu_calibration() {
+    // Factory calibration
     SPIFlashReadSubcommand cmd;
     cmd.address = SPI_FACTORY_IMU_CALIBRATION;
     cmd.size = 24;
@@ -299,6 +300,37 @@ void SwitchController::request_imu_calibration() {
         report = SwitchControllerReport(in_buf);
         if (report.report_type == SwitchControllerReport::InputReportType::REPORT_SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == SCMD_SPI_FLASH_READ) {
             handle_spi_flash_read(report.subcommand_reply.data);
+            break;
+        }
+    }
+
+    // User calibration
+    cmd.address = 0x8026;
+    cmd.size = 26;
+    write_to_hid(cmd);
+
+    while (true) {
+        uint8_t in_buf[361];
+        hid_read(handle, in_buf, 361);
+        report = SwitchControllerReport(in_buf);
+        if (report.report_type == SwitchControllerReport::InputReportType::REPORT_SUBCOMMAND_REPLY && report.subcommand_reply.reply_to == SCMD_SPI_FLASH_READ) {
+            print_hex(report.subcommand_reply.data, 35);
+            uint32_t addr;
+            uint8_t size;
+
+            memcpy(&addr, report.subcommand_reply.data, sizeof(uint32_t));
+            memcpy(&size, report.subcommand_reply.data + sizeof(uint32_t), sizeof(uint8_t));
+
+            uint8_t data[size];
+            memcpy(data, report.subcommand_reply.data + sizeof(uint32_t) + sizeof(uint8_t), size);
+
+            uint16_t magic = *((uint16_t*)data);
+
+            if (magic == 0xA1B2) {
+                has_user_imu_calib = true;
+                parse_imu_calibration(data + sizeof(uint16_t), &user_imu_calib);
+            }
+
             break;
         }
     }
@@ -347,7 +379,7 @@ void SwitchController::handle_spi_flash_read(uint8_t *reply) {
         case SPI_SERIAL_NO:
             break;
         case SPI_FACTORY_IMU_CALIBRATION:
-            update_imu_calibration(data, size);
+            parse_imu_calibration(data, &imu_calib);
             break;
         case SPI_FACTORY_STICK_CALIBRATION:
             update_factory_stick_calibration(data, size);
@@ -418,8 +450,8 @@ void SwitchController::update_factory_stick_calibration(uint8_t *p_raw_data, uin
     parse_stick_calibration(p_raw_data + 9, &rs_calib, STICK_RIGHT);
 }
 
-void SwitchController::update_imu_calibration(uint8_t *data, uint8_t size) {
-    memcpy(&imu_calib, data, size);
+void SwitchController::parse_imu_calibration(uint8_t *p_raw_data, IMUCalibrationData *p_dest) {
+    memcpy(&p_dest, p_raw_data, sizeof(IMUCalibrationData));
 }
 
 Vector2 SwitchController::get_stick(Stick stick) const {

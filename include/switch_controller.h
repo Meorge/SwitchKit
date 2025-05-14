@@ -54,6 +54,10 @@ class SwitchController
     StickCalibrationData user_rs_calib;
 
     IMUCalibrationData imu_calib;
+
+    bool has_user_imu_calib = false;
+    IMUCalibrationData user_imu_calib;
+
     Vector3 gyro_cal_coeff = Vector3(0,0,0);
     uint8_t buf[361];
 
@@ -143,7 +147,7 @@ private:
     void handle_spi_flash_read(uint8_t *reply);
     void update_factory_stick_calibration(uint8_t *stick_cal, uint8_t size);
     void parse_stick_calibration(uint8_t *p_raw_data, StickCalibrationData *p_dest, Stick p_stick);
-    void update_imu_calibration(uint8_t *imu_cal, uint8_t size);
+    void parse_imu_calibration(uint8_t *p_raw_data, IMUCalibrationData *p_dest);
     void update_color_data(uint8_t *data, uint8_t size);
 };
 }
