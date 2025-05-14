@@ -58,6 +58,8 @@ class SwitchController
     bool has_user_imu_calib = false;
     IMUCalibrationData user_imu_calib;
 
+    Vector3 accumulated_gyro = Vector3();
+
     Vector3 gyro_cal_coeff = Vector3(0,0,0);
     uint8_t buf[361];
 

@@ -1,5 +1,5 @@
 #include "switch_controller.h"
-
+#include <math.h>
 #include "extra_helpers.h"
 
 namespace SwitchKit {
@@ -34,6 +34,13 @@ void SwitchController::poll() {
         default:
             break;
     }
+
+    const IMUCalibrationData *calib = has_user_imu_calib ? &user_imu_calib : &imu_calib;
+    Vector3 val = report.imu_packets[0].get_gyro(calib);
+    double delta_time = 0.005; // 5ms
+    val *= delta_time;
+    val *= (M_PI / 180.0); // Convert from degrees to radians.
+    accumulated_gyro += val; // Add to accumulated value.
 }
 
 void SwitchController::request_device_info() {
@@ -459,7 +466,7 @@ void SwitchController::update_factory_stick_calibration(uint8_t *p_raw_data, uin
 }
 
 void SwitchController::parse_imu_calibration(uint8_t *p_raw_data, IMUCalibrationData *p_dest) {
-    memcpy(&p_dest, p_raw_data, sizeof(IMUCalibrationData));
+    memcpy(p_dest, p_raw_data, sizeof(IMUCalibrationData));
 }
 
 Vector2 SwitchController::get_stick(Stick p_stick) const {
@@ -511,13 +518,7 @@ Vector3 SwitchController::get_accel() const {
 }
 
 Vector3 SwitchController::get_gyro() const {
-    const IMUCalibrationData *calib = has_user_imu_calib ? &user_imu_calib : &imu_calib;
-    Vector3 val = report.imu_packets[0].get_gyro(calib);
-    double delta_time = 0.005; // 5ms
-    val.x *= delta_time;
-    val.y *= delta_time;
-    val.z *= delta_time;
-    return val;
+    return accumulated_gyro;
 }
 
 void SwitchController::update_color_data(uint8_t *p_data, uint8_t p_size) {

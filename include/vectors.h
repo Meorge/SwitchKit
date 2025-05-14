@@ -33,6 +33,44 @@ struct Vector3 {
         y = p_y;
         z = p_z;
     }
+
+    Vector3 operator*(const Vector3 &rhs) {
+        Vector3 out;
+        out.x = x * rhs.x;
+        out.y = y * rhs.y;
+        out.z = z * rhs.z;
+        return out;
+    }
+
+    Vector3 operator+=(Vector3 &rhs) {
+        x += rhs.x;
+        y += rhs.y;
+        z += rhs.z;
+        return Vector3(x, y, z);
+    }
+
+    Vector3 operator+(Vector3 &rhs) {
+        Vector3 out;
+        out.x = x + rhs.x;
+        out.y = y + rhs.y;
+        out.z = z + rhs.z;
+        return out;
+    }
+
+    Vector3 operator*=(const double &rhs) {
+        x *= rhs;
+        y *= rhs;
+        z *= rhs;
+        return Vector3(x, y, z);
+    }
+
+    Vector3 operator*(const double &rhs) {
+        Vector3 out;
+        out.x = x * rhs;
+        out.y = y * rhs;
+        out.z = z * rhs;
+        return out;
+    }
 };
 }
 
