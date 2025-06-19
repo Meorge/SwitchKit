@@ -1,8 +1,20 @@
 # SwitchKit
 
-SwitchKit is a C++ library for interacting with the Nintendo Switch Joy-Con controllers and Pro Controller.
+SwitchKit is a C++ library for interacting with controllers for the Nintendo Switch on a PC/Mac.
 It is relatively "pure", with [hidapi](https://github.com/libusb/hidapi) as the only dependency.
 Functionality is listed below.
+
+## Controller compatibility
+
+SwitchKit is compatible with the following controllers:
+
+- Nintendo Switch Joy-Con (L) and Joy-Con (R)
+- Nintendo Switch Pro Controller
+
+> [!WARNING]
+> At this time, **SwitchKit is not compatible with Nintendo Switch 2 controllers, including the Joy-Con 2 controllers or the Nintendo Switch 2 Pro Controller.**
+> 
+> If you have information on how to get these controllers to interface with a PC/Mac, please let me know - I'd love to add support!
 
 ## Features
 
